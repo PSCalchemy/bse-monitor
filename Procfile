@@ -1,1 +1,1 @@
-web: python bse_monitor_simple.py
+web: python bse_monitor_web.py

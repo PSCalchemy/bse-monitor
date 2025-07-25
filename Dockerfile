@@ -19,4 +19,4 @@ RUN useradd -m -u 1000 bseuser && chown -R bseuser:bseuser /app
 USER bseuser
 
 # Run the monitor
-CMD ["python", "bse_monitor_simple.py"]
+CMD ["python", "bse_monitor_web.py"]
