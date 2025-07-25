@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: bse-monitor
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python bse_monitor.py
+    envVars:
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USERNAME
+        value: 9ranjal@gmail.com
+      - key: SMTP_PASSWORD
+        value: yhhw rxir wpow pxqh
+      - key: SENDER_EMAIL
+        value: 9ranjal@gmail.com
+      - key: RECIPIENT_EMAILS
+        value: 9ranjal@gmail.com
+    healthCheckPath: /health
+    autoDeploy: true

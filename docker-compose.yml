@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  bse-monitor:
+    build: .
+    container_name: bse-monitor
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Kolkata
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - bse-network
+
+networks:
+  bse-network:
+    driver: bridge

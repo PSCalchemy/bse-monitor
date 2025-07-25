@@ -1,0 +1,15 @@
+# BSE Monitor Configuration
+# Copy this file to .env and fill in your actual values
+
+# Email Configuration
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+SENDER_EMAIL=your_email@gmail.com
+
+# Recipient emails (comma-separated)
+RECIPIENT_EMAILS=user1@example.com,user2@example.com,user3@example.com
+
+# Optional: Customize monitoring interval (in minutes)
+# CHECK_INTERVAL_MINUTES=5 
