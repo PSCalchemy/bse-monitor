@@ -1,7 +1,10 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Only load .env file if it exists (for local development)
+# In production (Render), environment variables are set directly
+if os.path.exists('.env'):
+    load_dotenv()
 
 # BSE Configuration
 BSE_ANNOUNCEMENTS_URL = "https://www.bseindia.com/corporates/ann.html"
