@@ -1,198 +1,169 @@
-# BSE Corporate Announcement Monitor
+# BSE Monitor
 
-A real-time monitoring system for BSE (Bombay Stock Exchange) corporate announcements that automatically parses XBRL files, analyzes content, and sends email alerts to multiple recipients.
+A Python-based monitoring system that tracks Bombay Stock Exchange (BSE) corporate announcements in real-time and sends email alerts with structured analysis.
 
-## Features
+## 🚀 **Live Deployment**
 
-- 🔍 **Real-time Monitoring**: Continuously monitors BSE announcements page
-- 📊 **XBRL Parsing**: Extracts structured data from XBRL files
-- 🎯 **Smart Analysis**: Analyzes announcements for urgency, keywords, and sentiment
-- 📧 **Multi-user Alerts**: Sends formatted email alerts to multiple recipients
-- 🚨 **Urgency Scoring**: Intelligent scoring system for announcement importance
-- 🏷️ **Flagging System**: Automatic flagging of earnings spikes, order wins, etc.
-- 📈 **Key Metrics Extraction**: Extracts financial metrics and business data
+**Status**: ✅ **Running on Render.com**
+- **Service**: 24/7 BSE announcement monitoring
+- **Email Alerts**: Sent to `9ranjal@gmail.com`
+- **Monitoring**: Every 5 minutes
+- **Repository**: https://github.com/PSCalchemy/bse-monitor
 
-## Email Alert Format
+## ✨ **Features**
 
-Each email alert includes:
-- Company name and timestamp
-- Urgency and confidence scores
-- Relevant flags (📈 Earnings Spike, 🛠️ Order Win, etc.)
-- Extracted keywords and key metrics
-- Parsed announcement text
-- Sentiment analysis
+- **Real-time Monitoring**: Tracks BSE corporate announcements page
+- **XBRL Parsing**: Extracts structured data from XBRL files
+- **Content Analysis**: Analyzes announcements for urgency and keywords
+- **Email Alerts**: Multi-user email notifications with detailed analysis
+- **Structured Data**: JSON-formatted alerts with:
+  - Company information
+  - Timestamp and announcement text
+  - Urgency and confidence scores
+  - Keyword extraction and flags
+  - Financial data parsing
 
-## Installation
-
-1. **Clone or download the project files**
-
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Configure environment variables**:
-   ```bash
-   cp env_example.txt .env
-   ```
-   
-   Edit `.env` with your email configuration:
-   ```env
-   SMTP_SERVER=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_USERNAME=your_email@gmail.com
-   SMTP_PASSWORD=your_app_password
-   SENDER_EMAIL=your_email@gmail.com
-   RECIPIENT_EMAILS=user1@example.com,user2@example.com,user3@example.com
-   ```
-
-4. **For Gmail users**: 
-   - Enable 2-factor authentication
-   - Generate an App Password
-   - Use the App Password in `SMTP_PASSWORD`
-
-## Usage
-
-### Testing the System
-
-Before running the monitor, test your configuration:
-
-```bash
-python test_monitor.py
-```
-
-This will test:
-- Email configuration
-- XBRL parsing
-- Announcement analysis
-- Send a test email
-
-### Running the Monitor
-
-Start the monitoring service:
-
-```bash
-python bse_monitor.py
-```
-
-The system will:
-- Check for new announcements every 5 minutes (configurable)
-- Parse XBRL files when available
-- Analyze announcements for urgency and relevance
-- Send email alerts to all configured recipients
-
-### Configuration Options
-
-Edit `config.py` to customize:
-
-- **Monitoring interval**: `CHECK_INTERVAL_MINUTES`
-- **Urgency keywords**: `URGENCY_KEYWORDS`
-- **Confidence weights**: `CONFIDENCE_WEIGHTS`
-- **Logging settings**: `LOG_LEVEL`, `LOG_FILE`
-
-## File Structure
+## 📁 **Project Structure**
 
 ```
 bse-monitor/
-├── bse_monitor.py          # Main monitoring script
-├── config.py              # Configuration settings
-├── xbrl_parser.py         # XBRL file parser
-├── announcement_analyzer.py # Content analysis engine
-├── email_sender.py        # Email alert system
-├── test_monitor.py        # System testing script
-├── requirements.txt       # Python dependencies
-├── env_example.txt        # Environment variables template
-├── README.md             # This file
-└── .env                  # Your configuration (create this)
+├── bse_monitor_simple.py    # Main monitoring service (Render deployment)
+├── config.py               # Configuration and environment variables
+├── xbrl_parser.py          # XBRL file parsing and data extraction
+├── announcement_analyzer.py # Content analysis and scoring
+├── email_sender.py         # Email alert system
+├── requirements.txt        # Python dependencies
+├── render.yaml            # Render.com deployment configuration
+├── Procfile               # Process file for deployment
+├── Dockerfile             # Docker configuration
+├── .gitignore            # Git ignore rules
+└── README.md             # This file
 ```
 
-## How It Works
+## 🔧 **Core Components**
 
-1. **Web Scraping**: Monitors the BSE announcements page for new entries
-2. **XBRL Processing**: Downloads and parses XBRL files for structured data
-3. **Content Analysis**: Analyzes text for keywords, urgency indicators, and sentiment
-4. **Scoring**: Calculates urgency and confidence scores based on multiple factors
-5. **Alert Generation**: Creates formatted email alerts with analysis results
-6. **Multi-user Delivery**: Sends alerts to all configured recipients
+### **bse_monitor_simple.py**
+- Main monitoring service
+- Fetches BSE announcements page
+- Processes new announcements
+- Sends email alerts
+- Runs continuously in background
 
-## Urgency Scoring
+### **config.py**
+- Environment variable configuration
+- Email settings (SMTP, recipients)
+- BSE URLs and monitoring intervals
+- Keyword lists for analysis
+- Confidence scoring weights
 
-The system calculates urgency scores based on:
-- Presence of financial keywords (₹ amounts, percentages)
-- Government/defense related content (MoD, defense orders)
-- Time-sensitive indicators (urgent, immediate, breaking)
-- Large monetary values (crore/lakh amounts)
-- Number of relevant flags triggered
+### **xbrl_parser.py**
+- Parses XBRL XML files
+- Extracts financial data, dates, amounts
+- Handles structured corporate data
+- Error handling for malformed files
 
-## Flagging System
+### **announcement_analyzer.py**
+- Content analysis and scoring
+- Keyword extraction and flagging
+- Urgency and confidence calculation
+- Sentiment analysis using TextBlob
 
-Automatic flags are generated for:
-- 📈 **Earnings Spike**: Profit, revenue, growth announcements
-- 🛠️ **Order Win**: Contract wins, project awards, MoD orders
-- 💰 **Financial**: Dividends, mergers, investments
-- ⚡ **Breaking**: Urgent, important, critical announcements
+### **email_sender.py**
+- Multi-user email alerts
+- HTML and plain text formatting
+- SMTP configuration
+- Error handling and retry logic
 
-## Troubleshooting
+## 📧 **Email Alert Format**
 
-### Common Issues
-
-1. **Email not sending**:
-   - Check SMTP credentials in `.env`
-   - For Gmail, ensure App Password is used
-   - Verify recipient emails are correct
-
-2. **No announcements found**:
-   - Check internet connection
-   - Verify BSE website accessibility
-   - Review logs for scraping errors
-
-3. **XBRL parsing errors**:
-   - Some announcements may not have XBRL files
-   - Check logs for specific parsing errors
-
-### Logs
-
-Monitor the system logs:
-- `bse_monitor.log`: Main application logs
-- Console output: Real-time status updates
-
-## Security Notes
-
-- Store sensitive credentials in `.env` file (not in version control)
-- Use App Passwords for Gmail instead of regular passwords
-- Regularly update dependencies for security patches
-
-## Customization
-
-### Adding New Keywords
-
-Edit `URGENCY_KEYWORDS` in `config.py`:
-
-```python
-URGENCY_KEYWORDS = {
-    "📈 Earnings Spike": [
-        "profit", "earnings", "revenue", "growth", "increase",
-        # Add your keywords here
-    ],
-    # Add new flag categories
+```json
+{
+  "company": "ABC Ltd.",
+  "timestamp": "2025-07-25 13:05",
+  "announcement_text": "...",
+  "flags": ["📈 Earnings Spike", "🛠️ Order Win"],
+  "urgency_score": 0.87,
+  "confidence_score": 0.91,
+  "keywords": ["300% increase", "₹150 cr order", "MoD"]
 }
 ```
 
-### Modifying Email Templates
+## 🚀 **Deployment**
 
-Edit `email_sender.py` to customize email formatting and content.
+### **Current Deployment (Render.com)**
+- **Status**: ✅ Active
+- **URL**: https://render.com (dashboard)
+- **Environment**: Python 3.11
+- **Auto-restart**: Enabled
+- **Monitoring**: 24/7
 
-### Adjusting Scoring
+### **Configuration**
+- **Email**: `9ranjal@gmail.com`
+- **Check Interval**: 5 minutes
+- **SMTP**: Gmail with App Password
+- **Environment Variables**: Set via render.yaml
 
-Modify scoring algorithms in `announcement_analyzer.py` to match your requirements.
+## 📊 **Monitoring**
 
-## Support
+### **Service Health**
+- **Status**: Running continuously
+- **Logs**: Available in Render dashboard
+- **Auto-restart**: On failure
+- **Email Alerts**: Active
 
-For issues or questions:
-1. Check the logs for error messages
-2. Run `test_monitor.py` to verify configuration
-3. Review this README for common solutions
+### **Expected Behavior**
+- Checks BSE every 5 minutes
+- Parses new announcements
+- Sends email alerts for new content
+- Logs all activities
 
-## License
+## 🔍 **Troubleshooting**
 
-This project is for educational and personal use. Please respect BSE's terms of service and rate limiting policies. 
+### **Common Issues**
+1. **No email alerts**: Check SMTP configuration
+2. **Service not running**: Check Render dashboard logs
+3. **Build failures**: Verify requirements.txt
+
+### **Logs**
+- **Render Dashboard**: Real-time service logs
+- **Email Delivery**: Check recipient inbox
+- **Error Handling**: Automatic retry logic
+
+## 📝 **Development**
+
+### **Local Testing**
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run locally (requires .env file)
+python bse_monitor_simple.py
+```
+
+### **Environment Variables**
+```bash
+SMTP_SERVER=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your_email@gmail.com
+SMTP_PASSWORD=your_app_password
+SENDER_EMAIL=your_email@gmail.com
+RECIPIENT_EMAILS=recipient1@gmail.com,recipient2@gmail.com
+```
+
+## 📄 **License**
+
+This project is for educational and personal use. Please respect BSE's terms of service.
+
+## 🤝 **Contributing**
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+---
+
+**Last Updated**: July 25, 2025
+**Status**: ✅ Production Ready
+**Deployment**: Render.com 
