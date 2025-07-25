@@ -19,6 +19,12 @@ import xml.etree.ElementTree as ET
 import threading
 from flask import Flask, jsonify
 
+# Add debug logging at startup
+print("🚀 Starting BSE Monitor Web Service...")
+print(f"📁 Current directory: {os.getcwd()}")
+print(f"🔧 Environment: {os.environ.get('RENDER_ENVIRONMENT', 'unknown')}")
+print(f"🌐 Port: {os.environ.get('PORT', '8080')}")
+
 from config import *
 from xbrl_parser import XBRLParser
 from email_sender import EmailSender
@@ -26,6 +32,8 @@ from announcement_analyzer import AnnouncementAnalyzer
 
 # Create Flask app for web service
 app = Flask(__name__)
+
+print("✅ Flask app created successfully")
 
 # Global variables for monitoring
 monitor_status = {
@@ -39,6 +47,7 @@ monitor_status = {
 @app.route('/health')
 def health():
     """Health check endpoint"""
+    print("🏥 Health check endpoint called")
     return jsonify({
         'status': 'healthy',
         'service': 'BSE Monitor',
@@ -52,6 +61,7 @@ def health():
 @app.route('/')
 def home():
     """Home page endpoint"""
+    print("🏠 Home endpoint called")
     return jsonify({
         'message': 'BSE Monitor is running',
         'status': 'active',
@@ -64,6 +74,21 @@ def home():
 @app.route('/status')
 def status():
     """Detailed status endpoint"""
+    print("📊 Status endpoint called")
+    
+    # Add memory monitoring
+    import psutil
+    memory_info = {}
+    try:
+        process = psutil.Process()
+        memory_info = {
+            'memory_percent': process.memory_percent(),
+            'memory_mb': process.memory_info().rss / 1024 / 1024,
+            'cpu_percent': process.cpu_percent()
+        }
+    except:
+        memory_info = {'error': 'Could not get memory info'}
+    
     return jsonify({
         'service': 'BSE Monitor',
         'status': monitor_status['status'],
@@ -72,8 +97,11 @@ def status():
         'total_announcements': monitor_status['total_announcements'],
         'last_announcement': monitor_status['last_announcement'],
         'email_recipient': '9ranjal@gmail.com',
-        'check_interval_minutes': CHECK_INTERVAL_MINUTES
+        'check_interval_minutes': CHECK_INTERVAL_MINUTES,
+        'system_info': memory_info
     })
+
+print("✅ Flask routes registered successfully")
 
 class BSEMonitor:
     def __init__(self):
@@ -251,31 +279,42 @@ class BSEMonitor:
 
     def check_for_new_announcements(self):
         """Main method to check for new announcements."""
-        self.logger.info("Checking for new BSE announcements...")
-        monitor_status['last_check'] = datetime.now().isoformat()
-        
-        html_content = self.fetch_announcements_page()
-        if not html_content:
-            return
-
-        announcements = self.extract_announcements(html_content)
-        new_announcements = []
-
-        for announcement in announcements:
-            processed = self.process_announcement(announcement)
-            if processed:
-                new_announcements.append(processed)
-
-        if new_announcements:
-            self.logger.info(f"Found {len(new_announcements)} new announcements")
-            self.send_alerts(new_announcements)
-            self.save_processed_announcements()
+        try:
+            self.logger.info("Checking for new BSE announcements...")
+            monitor_status['last_check'] = datetime.now().isoformat()
             
-            # Update global status
-            monitor_status['total_announcements'] += len(new_announcements)
-            monitor_status['last_announcement'] = new_announcements[0]['company']
-        else:
-            self.logger.info("No new announcements found")
+            html_content = self.fetch_announcements_page()
+            if not html_content:
+                self.logger.warning("Could not fetch announcements page")
+                return
+
+            announcements = self.extract_announcements(html_content)
+            new_announcements = []
+
+            for announcement in announcements:
+                try:
+                    processed = self.process_announcement(announcement)
+                    if processed:
+                        new_announcements.append(processed)
+                except Exception as e:
+                    self.logger.error(f"Error processing announcement: {e}")
+                    continue
+
+            if new_announcements:
+                self.logger.info(f"Found {len(new_announcements)} new announcements")
+                self.send_alerts(new_announcements)
+                self.save_processed_announcements()
+                
+                # Update global status
+                monitor_status['total_announcements'] += len(new_announcements)
+                monitor_status['last_announcement'] = new_announcements[0]['company']
+            else:
+                self.logger.info("No new announcements found")
+                
+        except Exception as e:
+            self.logger.error(f"Error in check_for_new_announcements: {e}")
+            import traceback
+            self.logger.error(f"Traceback: {traceback.format_exc()}")
 
     def send_alerts(self, announcements: List[Dict]):
         """Send email alerts for new announcements."""
@@ -291,27 +330,48 @@ class BSEMonitor:
         self.logger.info("Starting BSE Announcement Monitor...")
         
         # Run immediately on startup
-        self.check_for_new_announcements()
+        try:
+            self.check_for_new_announcements()
+        except Exception as e:
+            self.logger.error(f"Error in initial check: {e}")
         
         # Schedule regular checks
         schedule.every(CHECK_INTERVAL_MINUTES).minutes.do(self.check_for_new_announcements)
         
         while True:
-            schedule.run_pending()
-            time.sleep(60)  # Check every minute for scheduled tasks
+            try:
+                schedule.run_pending()
+                time.sleep(60)  # Check every minute for scheduled tasks
+            except Exception as e:
+                self.logger.error(f"Error in monitoring loop: {e}")
+                time.sleep(60)  # Continue after error
 
 def run_flask():
     """Run Flask app for web service."""
-    port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port)
+    try:
+        port = int(os.environ.get('PORT', 8080))
+        print(f"🌐 Starting Flask server on port {port}")
+        app.run(host='0.0.0.0', port=port, debug=False)
+    except Exception as e:
+        print(f"❌ Error starting Flask server: {e}")
+        raise
 
 if __name__ == "__main__":
-    # Create monitor instance
-    monitor = BSEMonitor()
-    
-    # Start monitor in background thread
-    monitor_thread = threading.Thread(target=monitor.run_monitor, daemon=True)
-    monitor_thread.start()
-    
-    # Start Flask app for web service
-    run_flask() 
+    try:
+        print("🔧 Creating BSE Monitor instance...")
+        # Create monitor instance
+        monitor = BSEMonitor()
+        
+        print("🔄 Starting monitor in background thread...")
+        # Start monitor in background thread
+        monitor_thread = threading.Thread(target=monitor.run_monitor, daemon=True)
+        monitor_thread.start()
+        
+        print("🚀 Starting Flask web service...")
+        # Start Flask app for web service
+        run_flask()
+    except Exception as e:
+        print(f"❌ Fatal error during startup: {e}")
+        import traceback
+        traceback.print_exc()
+        raise 

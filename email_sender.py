@@ -24,8 +24,17 @@ class EmailSender:
         self.recipient_emails = [email.strip() for email in RECIPIENT_EMAILS if email.strip()]
 
     def send_announcement_alert(self, announcement: Dict):
-        """Send email alert for a new announcement."""
+        """Send email alert for all announcements with proper categorization."""
         try:
+            # Always send emails now, but check categorization
+            email_decision = announcement.get('email_alert_decision', {})
+            categorization = email_decision.get('categorization', {})
+            
+            # Log the categorization
+            category = categorization.get('type', 'unknown')
+            priority = categorization.get('priority', 'routine')
+            self.logger.info(f"Sending email for {category} announcement (priority: {priority}): {announcement.get('basic_info', {}).get('title', 'Unknown')}")
+            
             # Create message
             msg = MIMEMultipart('alternative')
             msg['Subject'] = self.generate_subject(announcement)
@@ -43,141 +52,174 @@ class EmailSender:
             # Send email
             self.send_email(msg)
             
+            self.logger.info(f"Email sent for {category} announcement: {announcement.get('basic_info', {}).get('title', 'Unknown')}")
+            return True
+            
         except Exception as e:
             self.logger.error(f"Error sending announcement alert: {e}")
             raise
 
     def generate_subject(self, announcement: Dict) -> str:
-        """Generate email subject line."""
-        company = announcement.get('company', 'Unknown Company')
-        urgency_score = announcement.get('urgency_score', 0)
+        """Generate email subject line with categorization."""
+        basic_info = announcement.get('basic_info', {})
+        urgency_analysis = announcement.get('urgency_analysis', {})
+        email_decision = announcement.get('email_alert_decision', {})
+        categorization = email_decision.get('categorization', {})
         
-        # Add urgency indicator to subject
-        if urgency_score > 0.8:
-            urgency_indicator = "🚨 URGENT: "
-        elif urgency_score > 0.6:
-            urgency_indicator = "⚠️ HIGH: "
-        elif urgency_score > 0.4:
-            urgency_indicator = "📈 MEDIUM: "
+        company = basic_info.get('title', 'Unknown Company').split()[0]  # First word as company name
+        urgency_score = urgency_analysis.get('score', 0)
+        financial_impact = urgency_analysis.get('financial_impact', 0)
+        category = categorization.get('type', 'unknown')
+        priority = categorization.get('priority', 'routine')
+        
+        # Add category indicator to subject
+        if category == 'important' and urgency_score > 0.8:
+            category_indicator = "🚨 CRITICAL: "
+        elif category == 'important' and urgency_score > 0.6:
+            category_indicator = "⚠️ HIGH: "
+        elif category == 'important' and urgency_score > 0.4:
+            category_indicator = "📈 MEDIUM: "
+        elif category == 'routine':
+            category_indicator = "📋 ROUTINE: "
+        elif category == 'technical':
+            category_indicator = "🔧 TECHNICAL: "
+        elif category == 'administrative':
+            category_indicator = "📝 ADMIN: "
         else:
-            urgency_indicator = "📊 "
+            category_indicator = "📊 "
         
         # Add flags to subject if available
-        flags = announcement.get('flags', [])
+        flags = urgency_analysis.get('flags', [])
         flag_text = ""
         if flags:
-            flag_text = f" [{', '.join(flags[:2])}]"  # Limit to first 2 flags
+            flag_names = [flag.get('flag', '') for flag in flags[:2]]  # Limit to first 2 flags
+            flag_text = f" [{', '.join(flag_names)}]"
         
-        return f"{urgency_indicator}BSE Alert - {company}{flag_text}"
+        # Add financial impact if significant
+        financial_text = ""
+        if financial_impact > 10000000:  # 1 crore
+            financial_text = f" - ₹{financial_impact/10000000:.1f} Cr"
+        elif financial_impact > 100000:  # 1 lakh
+            financial_text = f" - ₹{financial_impact/100000:.1f} L"
+        
+        return f"{category_indicator}BSE Alert - {company}{flag_text}{financial_text}"
 
     def create_html_content(self, announcement: Dict) -> str:
-        """Create HTML email content."""
-        html_template = """<!DOCTYPE html>
+        """Create enhanced HTML email content with categorization."""
+        basic_info = announcement.get('basic_info', {})
+        urgency_analysis = announcement.get('urgency_analysis', {})
+        confidence_analysis = announcement.get('confidence_analysis', {})
+        sentiment_analysis = announcement.get('sentiment_analysis', {})
+        financial_analysis = announcement.get('financial_analysis', {})
+        risk_assessment = announcement.get('risk_assessment', {})
+        impact_analysis = announcement.get('impact_analysis', {})
+        email_decision = announcement.get('email_alert_decision', {})
+        categorization = email_decision.get('categorization', {})
+        
+        # Extract data
+        title = basic_info.get('title', 'Unknown Title')
+        extracted_text = basic_info.get('extracted_text', '')
+        urgency_score = urgency_analysis.get('score', 0)
+        confidence_score = confidence_analysis.get('score', 0)
+        sentiment = sentiment_analysis.get('combined', {}).get('overall', 'neutral')
+        risk_level = risk_assessment.get('risk_level', 'low')
+        impact_level = impact_analysis.get('impact_level', 'neutral')
+        category = categorization.get('type', 'unknown')
+        priority = categorization.get('priority', 'routine')
+        
+        # Get urgency color and category styling
+        urgency_color = self.get_urgency_color(urgency_score)
+        category_style = self.get_category_style(category, priority)
+        
+        html_template = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                 color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .alert-box { background: #f8f9fa; border-left: 4px solid #007bff; 
-                   padding: 15px; margin: 15px 0; border-radius: 4px; }
-        .score-box { display: inline-block; background: #e9ecef; 
-                   padding: 8px 12px; border-radius: 4px; margin: 5px; }
-        .flag { display: inline-block; background: #28a745; color: white; 
-               padding: 4px 8px; border-radius: 12px; margin: 2px; font-size: 12px; }
-        .keyword { display: inline-block; background: #17a2b8; color: white; 
-                 padding: 3px 6px; border-radius: 10px; margin: 2px; font-size: 11px; }
-        .metric { background: #fff3cd; border: 1px solid #ffeaa7; 
-                 padding: 10px; border-radius: 4px; margin: 10px 0; }
-        .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; 
-                 font-size: 12px; color: #6c757d; }
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                 color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }}
+        .alert-box {{ background: #f8f9fa; border-left: 4px solid {urgency_color}; 
+                   padding: 15px; margin: 15px 0; border-radius: 4px; }}
+        .category-badge {{ display: inline-block; padding: 8px 16px; border-radius: 20px; 
+                         color: white; font-weight: bold; margin: 10px 0; {category_style} }}
+        .score-box {{ display: inline-block; background: #e9ecef; 
+                   padding: 8px 12px; border-radius: 4px; margin: 5px; }}
+        .flag {{ display: inline-block; background: #28a745; color: white; 
+               padding: 4px 8px; border-radius: 12px; margin: 2px; font-size: 12px; }}
+        .keyword {{ display: inline-block; background: #17a2b8; color: white; 
+                 padding: 3px 6px; border-radius: 10px; margin: 2px; font-size: 11px; }}
+        .metric {{ background: #fff3cd; border: 1px solid #ffeaa7; 
+                 padding: 10px; border-radius: 4px; margin: 10px 0; }}
+        .risk-high {{ background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }}
+        .risk-medium {{ background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }}
+        .risk-low {{ background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }}
+        .impact-high {{ background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }}
+        .impact-medium {{ background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }}
+        .impact-low {{ background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }}
+        .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #dee2e6; 
+                 font-size: 12px; color: #6c757d; }}
+        .filter-info {{ background: #e2e3e5; border: 1px solid #d6d8db; 
+                      padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 12px; }}
+        .routine-notice {{ background: #f8f9fa; border: 1px solid #dee2e6; 
+                         padding: 10px; border-radius: 4px; margin: 10px 0; font-style: italic; }}
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🚨 BSE Corporate Announcement Alert</h1>
-            <p>New announcement detected and analyzed</p>
+            <h2>📧 BSE Announcement Alert</h2>
+            <p><strong>Company:</strong> {title.split()[0] if title else 'Unknown'}</p>
+            <p><strong>Time:</strong> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
         </div>
+        
+        <div class="category-badge">
+            {self.get_category_icon(category)} {category.upper()} - {priority.upper()}
+        </div>
+        
+        {self.get_routine_notice_html(category, priority)}
         
         <div class="alert-box">
-            <h2>{company}</h2>
-            <p><strong>Time:</strong> {timestamp}</p>
-            <p><strong>Category:</strong> {category}</p>
+            <h3>📋 Announcement Details</h3>
+            <p><strong>Title:</strong> {title}</p>
+            {f'<p><strong>Content:</strong> {extracted_text[:200]}{"..." if len(extracted_text) > 200 else ""}</p>' if extracted_text else ''}
         </div>
-        
-        {title_section}
         
         <div class="metric">
             <h3>📊 Analysis Scores</h3>
-            <div class="score-box">Urgency: {urgency_score}</div>
-            <div class="score-box">Confidence: {confidence_score}</div>
-            <div class="score-box">Sentiment: {sentiment}</div>
+            <div class="score-box">
+                <strong>Urgency Score:</strong> {urgency_score:.2f}
+            </div>
+            <div class="score-box">
+                <strong>Confidence Score:</strong> {confidence_score:.2f}
+            </div>
+            <div class="score-box">
+                <strong>Sentiment:</strong> {sentiment.title()}
+            </div>
+            <div class="score-box risk-{risk_level}">
+                <strong>Risk Level:</strong> {risk_level.title()}
+            </div>
+            <div class="score-box impact-{impact_level}">
+                <strong>Market Impact:</strong> {impact_level.title()}
+            </div>
         </div>
         
-        {flags_section}
-        
-        {keywords_section}
-        
-        {metrics_section}
-        
-        {announcement_text_section}
+        {self.generate_flags_html(urgency_analysis)}
+        {self.generate_financial_html(financial_analysis)}
+        {self.generate_contributing_factors_html(urgency_analysis)}
+        {self.generate_categorization_html(email_decision)}
         
         <div class="footer">
-            <p>This alert was generated automatically by the BSE Monitor system.</p>
-            <p>Generated at: {generated_time}</p>
+            <p><strong>BSE Monitor Service</strong></p>
+            <p>This alert was automatically generated based on sophisticated analysis.</p>
+            <p>Processing time: {datetime.now().strftime('%H:%M:%S')}</p>
         </div>
     </div>
 </body>
 </html>"""
         
-        # Prepare content sections
-        title_section = ""
-        if announcement.get('title'):
-            title_section = f'<div class="alert-box"><h3>📋 Title</h3><p>{announcement["title"]}</p></div>'
-        
-        flags_section = ""
-        flags = announcement.get('flags', [])
-        if flags:
-            flag_html = ''.join([f'<span class="flag">{flag}</span>' for flag in flags])
-            flags_section = f'<div class="metric"><h3>🚩 Flags</h3>{flag_html}</div>'
-        
-        keywords_section = ""
-        keywords = announcement.get('keywords', [])
-        if keywords:
-            keyword_html = ''.join([f'<span class="keyword">{keyword}</span>' for keyword in keywords[:8]])
-            keywords_section = f'<div class="metric"><h3>🔍 Keywords</h3>{keyword_html}</div>'
-        
-        metrics_section = ""
-        key_metrics = announcement.get('key_metrics', {})
-        if key_metrics:
-            metrics_html = ''.join([f'<p><strong>{k}:</strong> {v}</p>' for k, v in key_metrics.items()])
-            metrics_section = f'<div class="metric"><h3>📈 Key Metrics</h3>{metrics_html}</div>'
-        
-        announcement_text_section = ""
-        announcement_text = announcement.get('announcement_text', '')
-        if announcement_text:
-            # Truncate if too long
-            if len(announcement_text) > 500:
-                announcement_text = announcement_text[:500] + "..."
-            announcement_text_section = f'<div class="metric"><h3>📄 Announcement Text</h3><p>{announcement_text}</p></div>'
-        
-        return html_template.format(
-            company=announcement.get('company', 'Unknown Company'),
-            timestamp=announcement.get('timestamp', 'Unknown'),
-            category=announcement.get('category', 'General'),
-            title_section=title_section,
-            urgency_score=f"{announcement.get('urgency_score', 0):.2f}",
-            confidence_score=f"{announcement.get('confidence_score', 0):.2f}",
-            sentiment=announcement.get('sentiment', 'neutral').title(),
-            flags_section=flags_section,
-            keywords_section=keywords_section,
-            metrics_section=metrics_section,
-            announcement_text_section=announcement_text_section,
-            generated_time=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        )
+        return html_template
 
     def create_text_content(self, announcement: Dict) -> str:
         """Create plain text email content."""
@@ -274,3 +316,116 @@ Time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         except Exception as e:
             self.logger.error(f"Email configuration test failed: {e}")
             return False 
+
+    def get_urgency_color(self, urgency_score: float) -> str:
+        """Get color based on urgency score."""
+        if urgency_score > 0.8:
+            return "#dc3545"  # Red
+        elif urgency_score > 0.6:
+            return "#fd7e14"  # Orange
+        elif urgency_score > 0.4:
+            return "#ffc107"  # Yellow
+        else:
+            return "#28a745"  # Green
+
+    def generate_flags_html(self, urgency_analysis: Dict) -> str:
+        """Generate HTML for flags section."""
+        flags = urgency_analysis.get('flags', [])
+        if not flags:
+            return ""
+        
+        flags_html = '<div class="metric"><h3>🚩 Detected Flags</h3>'
+        for flag in flags:
+            flag_name = flag.get('flag', '')
+            flag_score = flag.get('score', 0)
+            keywords = flag.get('keywords', [])
+            flags_html += f'''
+                <div class="flag">
+                    {flag_name} (Score: {flag_score:.2f})
+                    <br><small>Keywords: {', '.join(keywords[:3])}</small>
+                </div>'''
+        flags_html += '</div>'
+        return flags_html
+
+    def generate_financial_html(self, financial_analysis: Dict) -> str:
+        """Generate HTML for financial data section."""
+        structured_data = financial_analysis.get('structured_data', {})
+        amounts = financial_analysis.get('amounts', [])
+        
+        if not structured_data and not amounts:
+            return ""
+        
+        financial_html = '<div class="metric"><h3>💰 Financial Data</h3>'
+        
+        if structured_data:
+            financial_html += '<h4>Structured Data:</h4>'
+            for key, value in structured_data.items():
+                if isinstance(value, (int, float)) and value > 0:
+                    if value >= 10000000:  # 1 crore
+                        formatted_value = f"₹{value/10000000:.2f} Cr"
+                    elif value >= 100000:  # 1 lakh
+                        formatted_value = f"₹{value/100000:.2f} L"
+                    else:
+                        formatted_value = f"₹{value:,.2f}"
+                    financial_html += f'<div class="keyword">{key}: {formatted_value}</div>'
+        
+        if amounts:
+            financial_html += '<h4>Extracted Amounts:</h4>'
+            for amount_info in amounts[:5]:  # Limit to first 5
+                value = amount_info.get('value', 0)
+                currency = amount_info.get('currency', 'INR')
+                if value > 0:
+                    if value >= 10000000:  # 1 crore
+                        formatted_value = f"₹{value/10000000:.2f} Cr"
+                    elif value >= 100000:  # 1 lakh
+                        formatted_value = f"₹{value/100000:.2f} L"
+                    else:
+                        formatted_value = f"₹{value:,.2f}"
+                    financial_html += f'<div class="keyword">{formatted_value} ({currency})</div>'
+        
+        financial_html += '</div>'
+        return financial_html
+
+    def generate_contributing_factors_html(self, urgency_analysis: Dict) -> str:
+        """Generate HTML for contributing factors section."""
+        factors = urgency_analysis.get('contributing_factors', [])
+        if not factors:
+            return ""
+        
+        factors_html = '<div class="metric"><h3>🔍 Contributing Factors</h3>'
+        for factor in factors:
+            factors_html += f'<div class="keyword">{factor}</div>'
+        factors_html += '</div>'
+        return factors_html
+
+    def generate_categorization_html(self, email_decision: Dict) -> str:
+        """Generate HTML for categorization information."""
+        categorization = email_decision.get('categorization', {})
+        reasons = email_decision.get('reasons', {})
+        
+        if not categorization:
+            return ""
+        
+        category = categorization.get('type', 'unknown')
+        priority = categorization.get('priority', 'routine')
+        should_highlight = categorization.get('should_highlight', False)
+        
+        cat_html = f'<div class="filter-info"><h3>🏷️ Announcement Categorization</h3>'
+        
+        # Show category and priority
+        cat_html += f'<p><strong>Category:</strong> {category.title()}</p>'
+        cat_html += f'<p><strong>Priority:</strong> {priority.replace("_", " ").title()}</p>'
+        
+        if should_highlight:
+            cat_html += '<p><strong>💡 Highlight:</strong> This announcement may require immediate attention</p>'
+        
+        # Show classification reasons
+        cat_html += '<h4>Classification Factors:</h4>'
+        for reason, is_true in reasons.items():
+            if reason.startswith('is_'):
+                status = "✅" if is_true else "❌"
+                reason_name = reason.replace('is_', '').replace('_', ' ').title()
+                cat_html += f'<div>{status} {reason_name}</div>'
+        
+        cat_html += '</div>'
+        return cat_html 
