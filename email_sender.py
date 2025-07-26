@@ -428,4 +428,15 @@ Time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
                 cat_html += f'<div>{status} {reason_name}</div>'
         
         cat_html += '</div>'
-        return cat_html 
+        return cat_html
+    
+    def get_category_style(self, category: str) -> str:
+        """Get CSS style for category."""
+        styles = {
+            'important': 'background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;',
+            'routine': 'background-color: #e2e3e5; color: #383d41; border: 1px solid #d6d8db;',
+            'technical': 'background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;',
+            'administrative': 'background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7;',
+            'unknown': 'background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;'
+        }
+        return styles.get(category, styles['unknown']) 

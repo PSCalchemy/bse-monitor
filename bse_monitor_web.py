@@ -286,31 +286,96 @@ class BSEMonitor:
                     rows = driver.find_elements(By.TAG_NAME, "tr")
                     self.logger.info(f"Found {len(rows)} table rows with Selenium")
                     
-                    for i, row in enumerate(rows):
-                        try:
-                            cells = row.find_elements(By.TAG_NAME, "td")
-                            if len(cells) >= 2:
-                                cell_texts = [cell.text.strip() for cell in cells]
-                                cell_text = ' '.join(cell_texts)
+                    # Wait a bit more for JavaScript to fully render
+                    time.sleep(3)
+                    
+                    # Try to find actual announcement data in the page
+                    page_text = driver.page_source
+                    
+                    # Look for patterns that indicate actual announcement data
+                    # The page contains AngularJS templates, but we need to find the actual rendered content
+                    
+                    # Try to find elements that might contain actual announcement data
+                    announcement_elements = driver.find_elements(By.CSS_SELECTOR, "td.tdcolumngrey")
+                    
+                    if announcement_elements:
+                        self.logger.info(f"Found {len(announcement_elements)} announcement elements")
+                        
+                        # Process each announcement element
+                        for i, element in enumerate(announcement_elements[:20]):  # Limit to first 20
+                            try:
+                                element_text = element.text.strip()
                                 
-                                # Look for patterns that suggest this is an announcement
-                                if any(keyword in cell_text.lower() for keyword in ['announcement', 'corporate', 'company', 'news']):
+                                # Skip if it's just template text or empty
+                                if not element_text or '{{' in element_text or '}}' in element_text:
+                                    continue
+                                
+                                # Try to extract meaningful data
+                                lines = element_text.split('\n')
+                                if len(lines) >= 2:
+                                    # First line might be company name, second line might be title
+                                    company_line = lines[0].strip()
+                                    title_line = lines[1].strip() if len(lines) > 1 else ""
+                                    
+                                    # Clean up the data
+                                    company = self.clean_company_name(company_line)
+                                    title = self.clean_title(title_line)
+                                    
+                                    if company and title and len(title) > 10:
+                                        announcement = {
+                                            'id': f"selenium_announcement_{i}_{hash(element_text)}",
+                                            'company': company,
+                                            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                            'title': title,
+                                            'category': 'General',
+                                            'xbrl_url': None,
+                                            'attachment_url': None
+                                        }
+                                        
+                                        announcements.append(announcement)
+                                        self.logger.info(f"Extracted Selenium announcement {i+1}: {company} - {title[:50]}...")
+                                        
+                            except Exception as e:
+                                self.logger.error(f"Error processing Selenium element {i}: {e}")
+                                continue
+                    
+                    # If no announcements found, try a different approach
+                    if not announcements:
+                        self.logger.info("No announcements found with tdcolumngrey, trying alternative approach...")
+                        
+                        # Look for any text that looks like company announcements
+                        all_text = driver.find_element(By.TAG_NAME, "body").text
+                        
+                        # Split by lines and look for patterns
+                        lines = all_text.split('\n')
+                        current_company = None
+                        
+                        for line in lines:
+                            line = line.strip()
+                            if not line or len(line) < 5:
+                                continue
+                                
+                            # Look for company patterns (usually in caps, contains "Ltd", "Limited", etc.)
+                            if any(keyword in line.upper() for keyword in ['LTD', 'LIMITED', 'CORPORATION', 'COMPANY']):
+                                current_company = line
+                                continue
+                                
+                            # Look for announcement patterns
+                            if current_company and any(keyword in line.lower() for keyword in ['announcement', 'board', 'meeting', 'result', 'dividend', 'agm']):
+                                if len(line) > 10:
                                     announcement = {
-                                        'id': f"selenium_announcement_{i}_{hash(cell_text)}",
-                                        'company': self.extract_company_name_from_text(cell_texts),
-                                        'timestamp': self.extract_timestamp_from_text(cell_texts),
-                                        'title': self.extract_title_from_text(cell_texts),
+                                        'id': f"selenium_text_announcement_{hash(line)}",
+                                        'company': current_company,
+                                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                        'title': line,
                                         'category': 'General',
                                         'xbrl_url': None,
                                         'attachment_url': None
                                     }
                                     
-                                    if announcement['title'] and announcement['title'] != 'No Title':
-                                        announcements.append(announcement)
-                                        self.logger.info(f"Extracted Selenium announcement {i+1}: {announcement['company']} - {announcement['title'][:50]}...")
-                        except Exception as e:
-                            self.logger.error(f"Error processing Selenium row {i}: {e}")
-                            continue
+                                    announcements.append(announcement)
+                                    self.logger.info(f"Extracted text announcement: {current_company} - {line[:50]}...")
+                                    break  # Only take first meaningful announcement per company
                     
                     self.logger.info(f"Total Selenium announcements extracted: {len(announcements)}")
                     
@@ -491,6 +556,44 @@ class BSEMonitor:
                 if text.lower() not in ['announcement', 'corporate', 'news', 'date', 'time', 'category', 'company']:
                     return text
         return "No Title"
+    
+    def clean_company_name(self, text: str) -> str:
+        """Clean company name from text."""
+        if not text:
+            return "Unknown Company"
+        
+        # Remove common prefixes/suffixes
+        text = text.strip()
+        text = text.replace('Ltd', 'Ltd').replace('Limited', 'Ltd')
+        
+        # Extract first part (usually company name)
+        parts = text.split('-')
+        if len(parts) > 1:
+            return parts[0].strip()
+        
+        return text
+    
+    def clean_title(self, text: str) -> str:
+        """Clean announcement title from text."""
+        if not text:
+            return "No Title"
+        
+        # Remove AngularJS template text
+        if '{{' in text or '}}' in text:
+            return "No Title"
+        
+        # Remove common noise
+        text = text.strip()
+        text = text.replace('Exchange Received Time', '').replace('Exchange Disseminated Time', '')
+        text = text.replace('Time Taken', '').replace('Read More..', '').replace('Read less..', '')
+        
+        # Clean up extra whitespace
+        text = ' '.join(text.split())
+        
+        if len(text) < 5:
+            return "No Title"
+        
+        return text
 
     def extract_announcements_api(self, api_data: dict) -> List[Dict]:
         """Extract announcement data from the API response."""
