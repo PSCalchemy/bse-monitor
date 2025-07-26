@@ -71,33 +71,7 @@ def home():
         'last_announcement': monitor_status['last_announcement']
     })
 
-@app.route('/business-hours')
-def business_hours():
-    """Business hours check endpoint"""
-    print("🕐 Business hours endpoint called")
-    
-    try:
-        from datetime import datetime
-        import pytz
-        ist = pytz.timezone('Asia/Kolkata')
-        current_time = datetime.now(ist)
-        
-        # Create monitor instance to check business hours
-        monitor = BSEMonitor()
-        is_business_hours = monitor.is_business_hours()
-        
-        return jsonify({
-            'current_time_ist': current_time.strftime('%Y-%m-%d %H:%M:%S IST'),
-            'is_business_hours': is_business_hours,
-            'business_hours': '9:00 AM - 5:00 PM IST (Weekdays)',
-            'weekday': current_time.strftime('%A'),
-            'next_check': 'During business hours only'
-        })
-    except Exception as e:
-        return jsonify({
-            'error': f'Could not check business hours: {e}',
-            'current_time_utc': datetime.utcnow().isoformat()
-        })
+
 
 @app.route('/status')
 def status():
@@ -117,26 +91,7 @@ def status():
     except:
         memory_info = {'error': 'Could not get memory info'}
     
-    # Add business hours info
-    business_hours_info = {}
-    try:
-        from datetime import datetime
-        import pytz
-        ist = pytz.timezone('Asia/Kolkata')
-        current_time = datetime.now(ist)
-        
-        # Create monitor instance to check business hours
-        monitor = BSEMonitor()
-        is_business_hours = monitor.is_business_hours()
-        
-        business_hours_info = {
-            'current_time_ist': current_time.strftime('%Y-%m-%d %H:%M:%S IST'),
-            'is_business_hours': is_business_hours,
-            'business_hours': '9:00 AM - 5:00 PM IST (Weekdays)',
-            'next_check': 'During business hours only'
-        }
-    except Exception as e:
-        business_hours_info = {'error': f'Could not get business hours info: {e}'}
+
     
     return jsonify({
         'service': 'BSE Monitor',
@@ -147,8 +102,7 @@ def status():
         'last_announcement': monitor_status['last_announcement'],
         'email_recipient': '9ranjal@gmail.com',
         'check_interval_minutes': CHECK_INTERVAL_MINUTES,
-        'system_info': memory_info,
-        'business_hours': business_hours_info
+        'system_info': memory_info
     })
 
 print("✅ Flask routes registered successfully")
@@ -379,17 +333,14 @@ class BSEMonitor:
         """Run the monitoring service in background."""
         self.logger.info("Starting BSE Announcement Monitor...")
         
-        # Run immediately on startup if during business hours
+        # Run immediately on startup
         try:
-            if self.is_business_hours():
-                self.check_for_new_announcements()
-            else:
-                self.logger.info("Outside business hours, skipping initial check")
+            self.check_for_new_announcements()
         except Exception as e:
             self.logger.error(f"Error in initial check: {e}")
         
-        # Schedule regular checks during business hours
-        schedule.every(CHECK_INTERVAL_MINUTES).minutes.do(self.check_during_business_hours)
+        # Schedule regular checks
+        schedule.every(CHECK_INTERVAL_MINUTES).minutes.do(self.check_for_new_announcements)
         
         while True:
             try:
@@ -398,35 +349,6 @@ class BSEMonitor:
             except Exception as e:
                 self.logger.error(f"Error in monitoring loop: {e}")
                 time.sleep(60)  # Continue after error
-
-    def is_business_hours(self):
-        """Check if current time is during business hours (9 AM to 5 PM IST)."""
-        from datetime import datetime
-        import pytz
-        
-        # Get current time in IST
-        ist = pytz.timezone('Asia/Kolkata')
-        current_time = datetime.now(ist)
-        
-        # Business hours: 9 AM to 5 PM IST
-        start_hour = 9
-        end_hour = 17  # 5 PM
-        
-        # Check if it's a weekday (Monday = 0, Sunday = 6)
-        is_weekday = current_time.weekday() < 5
-        
-        # Check if it's during business hours
-        is_business_time = start_hour <= current_time.hour < end_hour
-        
-        return is_weekday and is_business_time
-
-    def check_during_business_hours(self):
-        """Wrapper to check for announcements only during business hours."""
-        if self.is_business_hours():
-            self.logger.info("Business hours - checking for announcements")
-            self.check_for_new_announcements()
-        else:
-            self.logger.info("Outside business hours - skipping announcement check")
 
 def run_flask():
     """Run Flask app for web service."""

@@ -9,7 +9,7 @@ if os.path.exists('.env'):
 # BSE Configuration
 BSE_ANNOUNCEMENTS_URL = "https://www.bseindia.com/corporates/ann.html"
 BSE_BASE_URL = "https://www.bseindia.com"
-CHECK_INTERVAL_MINUTES = 15  # How often to check for new announcements (increased to reduce resource usage)
+CHECK_INTERVAL_MINUTES = 5  # How often to check for new announcements
 
 # Email Configuration
 SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
