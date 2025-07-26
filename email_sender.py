@@ -61,48 +61,44 @@ class EmailSender:
 
     def generate_subject(self, announcement: Dict) -> str:
         """Generate email subject line with categorization."""
-        basic_info = announcement.get('basic_info', {})
-        urgency_analysis = announcement.get('urgency_analysis', {})
-        email_decision = announcement.get('email_alert_decision', {})
-        categorization = email_decision.get('categorization', {})
+        # Use the actual announcement structure
+        company = announcement.get('company', 'Unknown Company')
+        title = announcement.get('title', 'Unknown Title')
+        urgency_score = announcement.get('urgency_score', 0)
+        category = announcement.get('category', 'General')
         
-        company = basic_info.get('title', 'Unknown Company').split()[0]  # First word as company name
-        urgency_score = urgency_analysis.get('score', 0)
-        financial_impact = urgency_analysis.get('financial_impact', 0)
-        category = categorization.get('type', 'unknown')
-        priority = categorization.get('priority', 'routine')
+        # Clean company name for subject
+        if company and company != 'Unknown Company':
+            # Try to extract a clean company name
+            if '{{' in company:
+                # If it's template text, use a generic name
+                company = 'BSE Company'
+            else:
+                # Clean up the company name
+                company = company.split()[0] if company else 'BSE Company'
+        else:
+            company = 'BSE Company'
         
         # Add category indicator to subject
-        if category == 'important' and urgency_score > 0.8:
+        if urgency_score > 0.8:
             category_indicator = "🚨 CRITICAL: "
-        elif category == 'important' and urgency_score > 0.6:
+        elif urgency_score > 0.6:
             category_indicator = "⚠️ HIGH: "
-        elif category == 'important' and urgency_score > 0.4:
+        elif urgency_score > 0.4:
             category_indicator = "📈 MEDIUM: "
-        elif category == 'routine':
+        elif category == 'General':
             category_indicator = "📋 ROUTINE: "
-        elif category == 'technical':
-            category_indicator = "🔧 TECHNICAL: "
-        elif category == 'administrative':
-            category_indicator = "📝 ADMIN: "
         else:
             category_indicator = "📊 "
         
         # Add flags to subject if available
-        flags = urgency_analysis.get('flags', [])
+        flags = announcement.get('flags', [])
         flag_text = ""
         if flags:
-            flag_names = [flag.get('flag', '') for flag in flags[:2]]  # Limit to first 2 flags
+            flag_names = flags[:2]  # Limit to first 2 flags
             flag_text = f" [{', '.join(flag_names)}]"
         
-        # Add financial impact if significant
-        financial_text = ""
-        if financial_impact > 10000000:  # 1 crore
-            financial_text = f" - ₹{financial_impact/10000000:.1f} Cr"
-        elif financial_impact > 100000:  # 1 lakh
-            financial_text = f" - ₹{financial_impact/100000:.1f} L"
-        
-        return f"{category_indicator}BSE Alert - {company}{flag_text}{financial_text}"
+        return f"{category_indicator}BSE Alert - {company}{flag_text}"
 
     def create_html_content(self, announcement: Dict) -> str:
         """Create enhanced HTML email content with categorization."""
@@ -223,18 +219,27 @@ class EmailSender:
 
     def create_text_content(self, announcement: Dict) -> str:
         """Create plain text email content."""
+        company = announcement.get('company', 'Unknown Company')
+        title = announcement.get('title', 'Unknown Title')
+        
+        # Clean up template text
+        if '{{' in company:
+            company = 'BSE Company'
+        if '{{' in title:
+            title = 'Announcement'
+        
         text_content = f"""
 BSE CORPORATE ANNOUNCEMENT ALERT
 ================================
 
-Company: {announcement.get('company', 'Unknown Company')}
+Company: {company}
 Time: {announcement.get('timestamp', 'Unknown')}
 Category: {announcement.get('category', 'General')}
 
 """
         
-        if announcement.get('title'):
-            text_content += f"Title: {announcement['title']}\n\n"
+        if title and title != 'Unknown Title':
+            text_content += f"Title: {title}\n\n"
         
         text_content += f"""
 Analysis Scores:
