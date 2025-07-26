@@ -859,7 +859,7 @@ class BSEMonitor:
                 
                 # Update global status
                 monitor_status['total_announcements'] += len(new_announcements)
-                monitor_status['last_announcement'] = new_announcements[0]['company']
+                monitor_status['last_announcement'] = f"{new_announcements[0]['company']} - {new_announcements[0]['title']}"
             else:
                 self.logger.info("No new announcements found")
                     
