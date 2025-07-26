@@ -360,114 +360,40 @@ class BSEMonitor:
                     EC.presence_of_element_located((By.TAG_NAME, "body"))
                 )
                 
-                # Wait a bit more for JavaScript to load
-                time.sleep(5)
+                # Wait longer for JavaScript to fully render the content
+                self.logger.info("Waiting for JavaScript content to load...")
+                time.sleep(15)  # Increased wait time
                 
-                # Look for announcement elements
+                # Try to wait for actual content to appear
+                try:
+                    WebDriverWait(driver, 30).until(
+                        lambda d: len(d.find_elements(By.CSS_SELECTOR, "td")) > 10
+                    )
+                    self.logger.info("Found table content, waiting for full render...")
+                    time.sleep(5)
+                except:
+                    self.logger.warning("Timeout waiting for table content")
+                
                 announcements = []
                 
-                # Try to find announcement table rows
-                try:
-                    # Look for table rows that might contain announcements
-                    rows = driver.find_elements(By.TAG_NAME, "tr")
-                    self.logger.info(f"Found {len(rows)} table rows with Selenium")
-                    
-                    # Wait a bit more for JavaScript to fully render
-                    time.sleep(3)
-                    
-                    # Try to find actual announcement data in the page
-                    page_text = driver.page_source
-                    
-                    # Look for patterns that indicate actual announcement data
-                    # The page contains AngularJS templates, but we need to find the actual rendered content
-                    
-                    # Try to find elements that might contain actual announcement data
-                    announcement_elements = driver.find_elements(By.CSS_SELECTOR, "td.tdcolumngrey")
-                    
-                    if announcement_elements:
-                        self.logger.info(f"Found {len(announcement_elements)} announcement elements")
-                        
-                        # Process each announcement element
-                        for i, element in enumerate(announcement_elements[:20]):  # Limit to first 20
-                            try:
-                                element_text = element.text.strip()
-                                
-                                # Skip if it's just template text or empty
-                                if not element_text or '{{' in element_text or '}}' in element_text:
-                                    continue
-                                
-                                # Try to extract meaningful data
-                                lines = element_text.split('\n')
-                                if len(lines) >= 2:
-                                    # First line might be company name, second line might be title
-                                    company_line = lines[0].strip()
-                                    title_line = lines[1].strip() if len(lines) > 1 else ""
-                                    
-                                    # Clean up the data
-                                    company = self.clean_company_name(company_line)
-                                    title = self.clean_title(title_line)
-                                    
-                                    if company and title and len(title) > 10:
-                                        announcement = {
-                                            'id': f"selenium_announcement_{i}_{hash(element_text)}",
-                                            'company': company,
-                                            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M"),
-                                            'title': title,
-                                            'category': 'General',
-                                            'xbrl_url': None,
-                                            'attachment_url': None
-                                        }
-                                        
-                                        announcements.append(announcement)
-                                        self.logger.info(f"Extracted Selenium announcement {i+1}: {company} - {title[:50]}...")
-                                        
-                            except Exception as e:
-                                self.logger.error(f"Error processing Selenium element {i}: {e}")
-                                continue
-                    
-                    # If no announcements found, try a different approach
-                    if not announcements:
-                        self.logger.info("No announcements found with tdcolumngrey, trying alternative approach...")
-                        
-                        # Look for any text that looks like company announcements
-                        all_text = driver.find_element(By.TAG_NAME, "body").text
-                        
-                        # Split by lines and look for patterns
-                        lines = all_text.split('\n')
-                        current_company = None
-                        
-                        for line in lines:
-                            line = line.strip()
-                            if not line or len(line) < 5:
-                                continue
-                                
-                            # Look for company patterns (usually in caps, contains "Ltd", "Limited", etc.)
-                            if any(keyword in line.upper() for keyword in ['LTD', 'LIMITED', 'CORPORATION', 'COMPANY']):
-                                current_company = line
-                                continue
-                                
-                            # Look for announcement patterns
-                            if current_company and any(keyword in line.lower() for keyword in ['announcement', 'board', 'meeting', 'result', 'dividend', 'agm']):
-                                if len(line) > 10:
-                                    announcement = {
-                                        'id': f"selenium_text_announcement_{hash(line)}",
-                                        'company': current_company,
-                                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M"),
-                                        'title': line,
-                                        'category': 'General',
-                                        'xbrl_url': None,
-                                        'attachment_url': None
-                                    }
-                                    
-                                    announcements.append(announcement)
-                                    self.logger.info(f"Extracted text announcement: {current_company} - {line[:50]}...")
-                                    break  # Only take first meaningful announcement per company
-                    
-                    self.logger.info(f"Total Selenium announcements extracted: {len(announcements)}")
-                    
-                except Exception as e:
-                    self.logger.error(f"Error extracting announcements with Selenium: {e}")
+                # Try multiple approaches to find announcements
+                approaches = [
+                    self._extract_from_table_rows,
+                    self._extract_from_rendered_text,
+                    self._extract_from_angular_data
+                ]
                 
+                for approach in approaches:
+                    try:
+                        announcements = approach(driver)
+                        if announcements:
+                            self.logger.info(f"Successfully extracted {len(announcements)} announcements using {approach.__name__}")
+                            break
+                    except Exception as e:
+                        self.logger.error(f"Error with approach {approach.__name__}: {e}")
+                        continue
+                
+                self.logger.info(f"Total Selenium announcements extracted: {len(announcements)}")
                 return announcements
                 
             finally:
@@ -476,6 +402,127 @@ class BSEMonitor:
         except Exception as e:
             self.logger.error(f"Error in Selenium scraping: {e}")
             return None
+    
+    def _extract_from_table_rows(self, driver) -> List[Dict]:
+        """Extract announcements from table rows."""
+        announcements = []
+        
+        # Look for table rows with actual data
+        rows = driver.find_elements(By.CSS_SELECTOR, "table tr")
+        self.logger.info(f"Found {len(rows)} table rows")
+        
+        for i, row in enumerate(rows):
+            try:
+                cells = row.find_elements(By.TAG_NAME, "td")
+                if len(cells) >= 3:
+                    cell_texts = [cell.text.strip() for cell in cells]
+                    
+                    # Skip if any cell contains template text
+                    if any('{{' in text or '}}' in text for text in cell_texts):
+                        continue
+                    
+                    # Look for meaningful content
+                    company = cell_texts[0] if len(cell_texts) > 0 else ""
+                    title = cell_texts[1] if len(cell_texts) > 1 else ""
+                    
+                    if company and title and len(title) > 10 and not company.isdigit():
+                        announcement = {
+                            'id': f"table_row_{i}_{hash(str(cell_texts))}",
+                            'company': company,
+                            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M"),
+                            'title': title,
+                            'category': 'General',
+                            'xbrl_url': None,
+                            'attachment_url': None
+                        }
+                        announcements.append(announcement)
+                        self.logger.info(f"Extracted table announcement {i+1}: {company} - {title[:50]}...")
+            except Exception as e:
+                self.logger.error(f"Error processing row {i}: {e}")
+                continue
+        
+        return announcements
+    
+    def _extract_from_rendered_text(self, driver) -> List[Dict]:
+        """Extract announcements from rendered text content."""
+        announcements = []
+        
+        # Get all text and look for patterns
+        body_text = driver.find_element(By.TAG_NAME, "body").text
+        lines = body_text.split('\n')
+        
+        current_company = None
+        for line in lines:
+            line = line.strip()
+            if not line or len(line) < 5:
+                continue
+            
+            # Look for company patterns
+            if any(keyword in line.upper() for keyword in ['LTD', 'LIMITED', 'CORPORATION', 'COMPANY', 'INDIA']):
+                if len(line) > 3 and not line.isdigit():
+                    current_company = line
+                    continue
+            
+            # Look for announcement patterns
+            if current_company and any(keyword in line.lower() for keyword in ['announcement', 'board', 'meeting', 'result', 'dividend', 'agm', 'quarterly']):
+                if len(line) > 10 and '{{' not in line:
+                    announcement = {
+                        'id': f"text_announcement_{hash(line)}",
+                        'company': current_company,
+                        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        'title': line,
+                        'category': 'General',
+                        'xbrl_url': None,
+                        'attachment_url': None
+                    }
+                    announcements.append(announcement)
+                    self.logger.info(f"Extracted text announcement: {current_company} - {line[:50]}...")
+                    break
+        
+        return announcements
+    
+    def _extract_from_angular_data(self, driver) -> List[Dict]:
+        """Extract announcements from AngularJS data."""
+        announcements = []
+        
+        # Try to execute JavaScript to get the actual data
+        try:
+            script = """
+            var announcements = [];
+            if (typeof CorpannData !== 'undefined' && CorpannData.Table) {
+                for (var i = 0; i < CorpannData.Table.length; i++) {
+                    var item = CorpannData.Table[i];
+                    if (item.SLONGNAME && item.NEWSSUB) {
+                        announcements.push({
+                            company: item.SLONGNAME,
+                            title: item.NEWSSUB,
+                            timestamp: item.NEWS_DT || new Date().toISOString(),
+                            category: item.CATEGORYNAME || 'General'
+                        });
+                    }
+                }
+            }
+            return announcements;
+            """
+            
+            result = driver.execute_script(script)
+            if result:
+                for i, item in enumerate(result):
+                    announcement = {
+                        'id': f"angular_announcement_{i}_{hash(str(item))}",
+                        'company': item.get('company', 'Unknown Company'),
+                        'timestamp': item.get('timestamp', datetime.now().strftime("%Y-%m-%d %H:%M")),
+                        'title': item.get('title', 'No Title'),
+                        'category': item.get('category', 'General'),
+                        'xbrl_url': None,
+                        'attachment_url': None
+                    }
+                    announcements.append(announcement)
+                    self.logger.info(f"Extracted Angular announcement {i+1}: {announcement['company']} - {announcement['title'][:50]}...")
+        except Exception as e:
+            self.logger.error(f"Error extracting Angular data: {e}")
+        
+        return announcements
 
     def fetch_announcements_api(self) -> Optional[dict]:
         """Fetch announcements from BSE API with proper parameters."""
@@ -908,12 +955,41 @@ class BSEMonitor:
 
     def send_alerts(self, announcements: List[Dict]):
         """Send email alerts for new announcements."""
+        meaningful_count = 0
         for announcement in announcements:
             try:
-                self.email_sender.send_announcement_alert(announcement)
-                self.logger.info(f"Alert sent for announcement: {announcement['company']}")
+                # Only send alerts for meaningful announcements
+                if self.is_meaningful_announcement(announcement):
+                    success = self.email_sender.send_announcement_alert(announcement)
+                    if success:
+                        meaningful_count += 1
+                        self.logger.info(f"Alert sent for meaningful announcement: {announcement.get('company', 'Unknown')}")
+                else:
+                    self.logger.info(f"Skipping template/meaningless announcement: {announcement.get('company', 'Unknown')[:50]}...")
             except Exception as e:
-                self.logger.error(f"Error sending alert for {announcement['company']}: {e}")
+                self.logger.error(f"Error sending alert for {announcement.get('company', 'Unknown')}: {e}")
+        
+        self.logger.info(f"Sent {meaningful_count} meaningful alerts out of {len(announcements)} total announcements")
+    
+    def is_meaningful_announcement(self, announcement: Dict) -> bool:
+        """Check if announcement has meaningful content."""
+        company = announcement.get('company', '')
+        title = announcement.get('title', '')
+        
+        # Skip template text
+        if '{{' in company or '}}' in company or '{{' in title or '}}' in title:
+            return False
+        
+        # Skip common template phrases
+        template_phrases = ['Security Code', 'Exchange Disseminated Time', 'Exchange Received Time', 'Time Taken']
+        if any(phrase in company or phrase in title for phrase in template_phrases):
+            return False
+        
+        # Must have some actual content
+        if len(title.strip()) < 10:
+            return False
+        
+        return True
 
     def run_monitor(self):
         """Run the monitoring service in background."""

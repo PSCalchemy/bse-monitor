@@ -26,6 +26,20 @@ class EmailSender:
     def send_announcement_alert(self, announcement: Dict):
         """Send email alert for all announcements with proper categorization."""
         try:
+            # Check if this is meaningful announcement data
+            company = announcement.get('company', '')
+            title = announcement.get('title', '')
+            
+            # Skip if it's just template text
+            if self.is_template_text(company) or self.is_template_text(title):
+                self.logger.info(f"Skipping email for template text announcement: {company[:50]}...")
+                return False
+            
+            # Check if we have meaningful content
+            if not self.has_meaningful_content(announcement):
+                self.logger.info(f"Skipping email for announcement with no meaningful content")
+                return False
+            
             # Always send emails now, but check categorization
             email_decision = announcement.get('email_alert_decision', {})
             categorization = email_decision.get('categorization', {})
@@ -33,7 +47,7 @@ class EmailSender:
             # Log the categorization
             category = categorization.get('type', 'unknown')
             priority = categorization.get('priority', 'routine')
-            self.logger.info(f"Sending email for {category} announcement (priority: {priority}): {announcement.get('basic_info', {}).get('title', 'Unknown')}")
+            self.logger.info(f"Sending email for {category} announcement (priority: {priority}): {title[:50]}...")
             
             # Create message
             msg = MIMEMultipart('alternative')
@@ -52,12 +66,33 @@ class EmailSender:
             # Send email
             self.send_email(msg)
             
-            self.logger.info(f"Email sent for {category} announcement: {announcement.get('basic_info', {}).get('title', 'Unknown')}")
+            self.logger.info(f"Email sent for {category} announcement: {title[:50]}...")
             return True
             
         except Exception as e:
             self.logger.error(f"Error sending announcement alert: {e}")
             raise
+    
+    def is_template_text(self, text: str) -> bool:
+        """Check if text contains AngularJS template syntax."""
+        if not text:
+            return True
+        return '{{' in text or '}}' in text or text.strip() in ['Security Code', 'Exchange Disseminated Time', 'Exchange Received Time']
+    
+    def has_meaningful_content(self, announcement: Dict) -> bool:
+        """Check if announcement has meaningful content."""
+        company = announcement.get('company', '')
+        title = announcement.get('title', '')
+        
+        # Must have non-template company and title
+        if self.is_template_text(company) or self.is_template_text(title):
+            return False
+        
+        # Must have some actual content
+        if len(title.strip()) < 10:
+            return False
+        
+        return True
 
     def generate_subject(self, announcement: Dict) -> str:
         """Generate email subject line with categorization."""
