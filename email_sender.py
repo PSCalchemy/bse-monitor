@@ -430,7 +430,7 @@ Time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
         cat_html += '</div>'
         return cat_html
     
-    def get_category_style(self, category: str) -> str:
+    def get_category_style(self, category: str, priority: str = None) -> str:
         """Get CSS style for category."""
         styles = {
             'important': 'background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;',
@@ -439,4 +439,25 @@ Time: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
             'administrative': 'background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7;',
             'unknown': 'background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;'
         }
-        return styles.get(category, styles['unknown']) 
+        return styles.get(category, styles['unknown'])
+    
+    def get_category_icon(self, category: str) -> str:
+        """Get icon for category."""
+        icons = {
+            'important': '🚨',
+            'routine': '📋',
+            'technical': '🔧',
+            'administrative': '📝',
+            'unknown': '📊'
+        }
+        return icons.get(category, '📊')
+    
+    def get_routine_notice_html(self, category: str, priority: str) -> str:
+        """Get HTML for routine notice."""
+        if category == 'routine' and priority == 'routine':
+            return '''
+            <div class="routine-notice">
+                <strong>📋 Routine Notice:</strong> This is a routine announcement that may not require immediate action.
+            </div>
+            '''
+        return "" 
