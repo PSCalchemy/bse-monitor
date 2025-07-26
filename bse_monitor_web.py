@@ -218,6 +218,36 @@ class BSEMonitor:
             self.logger.error(f"Error fetching BSE page: {e}")
             return None
 
+    def fetch_announcements_api(self) -> Optional[dict]:
+        """Fetch announcements from BSE API."""
+        try:
+            api_url = "https://api.bseindia.com/BseIndiaAPI/api/AnnGetData/w"
+            self.logger.info(f"Fetching BSE announcements from API: {api_url}")
+            
+            # Add required headers for API
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                'Referer': 'https://www.bseindia.com/corporates/ann.html',
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+            }
+            
+            response = self.session.get(api_url, headers=headers, timeout=30)
+            response.raise_for_status()
+            
+            data = response.json()
+            self.logger.info(f"BSE API response received, Table length: {len(data.get('Table', []))}")
+            return data
+            
+        except requests.RequestException as e:
+            self.logger.error(f"Error fetching BSE API: {e}")
+            return None
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Error parsing BSE API JSON: {e}")
+            return None
+
     def extract_announcements(self, html_content: str) -> List[Dict]:
         """Extract announcement data from the HTML page."""
         announcements = []
@@ -262,6 +292,48 @@ class BSEMonitor:
                 continue
         
         self.logger.info(f"Total announcements extracted: {len(announcements)}")
+        return announcements
+
+    def extract_announcements_api(self, api_data: dict) -> List[Dict]:
+        """Extract announcement data from the API response."""
+        announcements = []
+        
+        if not api_data or 'Table' not in api_data:
+            self.logger.warning("No Table data in API response")
+            return announcements
+        
+        table_data = api_data['Table']
+        if not isinstance(table_data, list):
+            self.logger.warning("Table data is not a list")
+            return announcements
+        
+        self.logger.info(f"Processing {len(table_data)} announcements from API")
+        
+        for i, item in enumerate(table_data):
+            try:
+                # Extract data from API response
+                announcement = {
+                    'id': f"{item.get('SCRIP_CD', '')}_{item.get('NEWS_DT', '')}",
+                    'company': item.get('SLONGNAME', 'Unknown Company'),
+                    'timestamp': item.get('NEWS_DT', ''),
+                    'title': item.get('NEWSSUB', 'No Title'),
+                    'category': item.get('CATEGORYNAME', 'General'),
+                    'xbrl_url': item.get('XML_NAME', None),
+                    'attachment_url': item.get('ATTACHMENTNAME', None),
+                    'security_code': item.get('SCRIP_CD', ''),
+                    'news_id': item.get('NEWSID', ''),
+                    'submission_time': item.get('News_submission_dt', ''),
+                    'dissemination_time': item.get('DissemDT', ''),
+                }
+                
+                announcements.append(announcement)
+                self.logger.info(f"Extracted API announcement {i+1}: {announcement['company']} - {announcement['title'][:50]}...")
+                
+            except Exception as e:
+                self.logger.error(f"Error extracting API announcement {i+1}: {e}")
+                continue
+        
+        self.logger.info(f"Total API announcements extracted: {len(announcements)}")
         return announcements
 
     def generate_announcement_id(self, row) -> str:
@@ -346,8 +418,22 @@ class BSEMonitor:
                 announcement.update(parsed_data)
 
         # Analyze the announcement
-        analysis = self.analyzer.analyze(announcement)
-        announcement.update(analysis)
+        try:
+            analysis = self.analyzer.analyze_announcement(
+                title=announcement.get('title', ''),
+                content=announcement.get('title', ''),  # Use title as content for now
+                xbrl_content=xbrl_content,
+                company_info={'company_name': announcement.get('company', '')}
+            )
+            announcement.update(analysis)
+        except Exception as e:
+            self.logger.error(f"Error analyzing announcement: {e}")
+            # Add basic analysis if analyzer fails
+            announcement.update({
+                'urgency_score': 0.5,
+                'confidence_score': 0.5,
+                'category': 'general'
+            })
 
         # Mark as processed
         self.processed_announcements.add(announcement['id'])
@@ -366,13 +452,14 @@ class BSEMonitor:
             current_time_ist = datetime.now(ist)
             monitor_status['last_check'] = current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST')
             
-            html_content = self.fetch_announcements_page()
-            if not html_content:
-                self.logger.warning("Could not fetch announcements page")
+            # Use API instead of HTML scraping
+            api_data = self.fetch_announcements_api()
+            if not api_data:
+                self.logger.warning("Could not fetch announcements from API")
                 return
 
-            announcements = self.extract_announcements(html_content)
-            self.logger.info(f"Extracted {len(announcements)} total announcements from BSE page")
+            announcements = self.extract_announcements_api(api_data)
+            self.logger.info(f"Extracted {len(announcements)} total announcements from BSE API")
             
             new_announcements = []
             processed_count = 0
