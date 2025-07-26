@@ -36,13 +36,19 @@ app = Flask(__name__)
 print("✅ Flask app created successfully")
 
 # Global variables for monitoring
+# Initialize with IST timestamps
+from datetime import datetime
+import pytz
+ist = pytz.timezone('Asia/Kolkata')
+current_time_ist = datetime.now(ist)
+
 monitor_status = {
     'last_check': 'Never',
     'total_announcements': 0,
     'last_announcement': None,
-    'service_started': datetime.now().isoformat(),
+    'service_started': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST'),
     'status': 'running',
-    'last_heartbeat': datetime.now().isoformat(),
+    'last_heartbeat': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST'),
     'monitoring_active': True
 }
 
@@ -50,10 +56,18 @@ monitor_status = {
 def health():
     """Health check endpoint"""
     print("🏥 Health check endpoint called")
+    
+    # Convert to IST
+    from datetime import datetime
+    import pytz
+    ist = pytz.timezone('Asia/Kolkata')
+    current_time_ist = datetime.now(ist)
+    
     return jsonify({
         'status': 'healthy',
         'service': 'BSE Monitor',
-        'timestamp': datetime.now().isoformat(),
+        'timestamp': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST'),
+        'timestamp_utc': datetime.now().isoformat(),
         'email': '9ranjal@gmail.com',
         'last_check': monitor_status['last_check'],
         'total_announcements': monitor_status['total_announcements'],
@@ -64,13 +78,21 @@ def health():
 def home():
     """Home page endpoint"""
     print("🏠 Home endpoint called")
+    
+    # Convert to IST
+    from datetime import datetime
+    import pytz
+    ist = pytz.timezone('Asia/Kolkata')
+    current_time_ist = datetime.now(ist)
+    
     return jsonify({
         'message': 'BSE Monitor is running',
         'status': 'active',
         'email': '9ranjal@gmail.com',
         'last_check': monitor_status['last_check'],
         'total_announcements': monitor_status['total_announcements'],
-        'last_announcement': monitor_status['last_announcement']
+        'last_announcement': monitor_status['last_announcement'],
+        'current_time_ist': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST')
     })
 
 
@@ -80,6 +102,12 @@ def check_now():
     """Manually trigger an announcement check"""
     print("🔍 Manual check triggered")
     
+    # Convert to IST
+    from datetime import datetime
+    import pytz
+    ist = pytz.timezone('Asia/Kolkata')
+    current_time_ist = datetime.now(ist)
+    
     try:
         # Create monitor instance and run check
         monitor = BSEMonitor()
@@ -87,13 +115,15 @@ def check_now():
         
         return jsonify({
             'message': 'Manual check completed',
-            'timestamp': datetime.now().isoformat(),
+            'timestamp_ist': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST'),
+            'timestamp_utc': datetime.now().isoformat(),
             'last_check': monitor_status['last_check']
         })
     except Exception as e:
         return jsonify({
             'error': f'Manual check failed: {e}',
-            'timestamp': datetime.now().isoformat()
+            'timestamp_ist': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST'),
+            'timestamp_utc': datetime.now().isoformat()
         }), 500
 
 @app.route('/status')
@@ -310,7 +340,13 @@ class BSEMonitor:
         """Main method to check for new announcements."""
         try:
             self.logger.info("Checking for new BSE announcements...")
-            monitor_status['last_check'] = datetime.now().isoformat()
+            
+            # Store timestamp in IST
+            from datetime import datetime
+            import pytz
+            ist = pytz.timezone('Asia/Kolkata')
+            current_time_ist = datetime.now(ist)
+            monitor_status['last_check'] = current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST')
             
             html_content = self.fetch_announcements_page()
             if not html_content:
@@ -377,8 +413,12 @@ class BSEMonitor:
             try:
                 loop_count += 1
                 
-                # Update heartbeat
-                monitor_status['last_heartbeat'] = datetime.now().isoformat()
+                # Update heartbeat in IST
+                from datetime import datetime
+                import pytz
+                ist = pytz.timezone('Asia/Kolkata')
+                current_time_ist = datetime.now(ist)
+                monitor_status['last_heartbeat'] = current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST')
                 
                 if loop_count % 10 == 0:  # Log every 10 minutes
                     self.logger.info(f"Monitoring loop iteration {loop_count} - checking for scheduled tasks")
