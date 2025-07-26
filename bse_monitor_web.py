@@ -19,6 +19,18 @@ import xml.etree.ElementTree as ET
 import threading
 from flask import Flask, jsonify
 
+# Optional Selenium imports for advanced scraping
+try:
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from webdriver_manager.chrome import ChromeDriverManager
+    SELENIUM_AVAILABLE = True
+except ImportError:
+    SELENIUM_AVAILABLE = False
+
 # Add debug logging at startup
 print("🚀 Starting BSE Monitor Web Service...")
 print(f"📁 Current directory: {os.getcwd()}")
@@ -217,12 +229,126 @@ class BSEMonitor:
         except requests.RequestException as e:
             self.logger.error(f"Error fetching BSE page: {e}")
             return None
+    
+    def fetch_announcements_selenium(self) -> Optional[List[Dict]]:
+        """Fetch announcements using Selenium to handle dynamic content."""
+        if not SELENIUM_AVAILABLE:
+            self.logger.warning("Selenium not available, skipping Selenium scraping")
+            return None
+        
+        try:
+            self.logger.info("Attempting Selenium-based scraping...")
+            
+            # Setup Chrome options for headless browsing
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+            
+            driver = None
+            try:
+                # Try to use webdriver-manager to get Chrome driver
+                driver = webdriver.Chrome(ChromeDriverManager().install(), options=chrome_options)
+            except Exception as e:
+                self.logger.warning(f"Could not use webdriver-manager: {e}")
+                # Fallback to system Chrome
+                try:
+                    driver = webdriver.Chrome(options=chrome_options)
+                except Exception as e2:
+                    self.logger.error(f"Could not initialize Chrome driver: {e2}")
+                    return None
+            
+            if not driver:
+                return None
+            
+            try:
+                # Navigate to the BSE announcements page
+                self.logger.info("Navigating to BSE announcements page...")
+                driver.get(BSE_ANNOUNCEMENTS_URL)
+                
+                # Wait for the page to load
+                WebDriverWait(driver, 30).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "body"))
+                )
+                
+                # Wait a bit more for JavaScript to load
+                time.sleep(5)
+                
+                # Look for announcement elements
+                announcements = []
+                
+                # Try to find announcement table rows
+                try:
+                    # Look for table rows that might contain announcements
+                    rows = driver.find_elements(By.TAG_NAME, "tr")
+                    self.logger.info(f"Found {len(rows)} table rows with Selenium")
+                    
+                    for i, row in enumerate(rows):
+                        try:
+                            cells = row.find_elements(By.TAG_NAME, "td")
+                            if len(cells) >= 2:
+                                cell_texts = [cell.text.strip() for cell in cells]
+                                cell_text = ' '.join(cell_texts)
+                                
+                                # Look for patterns that suggest this is an announcement
+                                if any(keyword in cell_text.lower() for keyword in ['announcement', 'corporate', 'company', 'news']):
+                                    announcement = {
+                                        'id': f"selenium_announcement_{i}_{hash(cell_text)}",
+                                        'company': self.extract_company_name_from_text(cell_texts),
+                                        'timestamp': self.extract_timestamp_from_text(cell_texts),
+                                        'title': self.extract_title_from_text(cell_texts),
+                                        'category': 'General',
+                                        'xbrl_url': None,
+                                        'attachment_url': None
+                                    }
+                                    
+                                    if announcement['title'] and announcement['title'] != 'No Title':
+                                        announcements.append(announcement)
+                                        self.logger.info(f"Extracted Selenium announcement {i+1}: {announcement['company']} - {announcement['title'][:50]}...")
+                        except Exception as e:
+                            self.logger.error(f"Error processing Selenium row {i}: {e}")
+                            continue
+                    
+                    self.logger.info(f"Total Selenium announcements extracted: {len(announcements)}")
+                    
+                except Exception as e:
+                    self.logger.error(f"Error extracting announcements with Selenium: {e}")
+                
+                return announcements
+                
+            finally:
+                driver.quit()
+                
+        except Exception as e:
+            self.logger.error(f"Error in Selenium scraping: {e}")
+            return None
 
     def fetch_announcements_api(self) -> Optional[dict]:
-        """Fetch announcements from BSE API."""
+        """Fetch announcements from BSE API with proper parameters."""
         try:
-            api_url = "https://api.bseindia.com/BseIndiaAPI/api/AnnGetData/w"
+            # Try the correct API endpoint with parameters
+            api_url = "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
             self.logger.info(f"Fetching BSE announcements from API: {api_url}")
+            
+            # Get today's date in DD/MM/YYYY format
+            from datetime import datetime
+            today = datetime.now()
+            date_str = today.strftime("%d/%m/%Y")
+            
+            # Parameters based on the JavaScript controller
+            params = {
+                'strScrip': '',  # Empty for all companies
+                'strCat': '-1',  # All categories
+                'strPrevDate': date_str,
+                'strToDate': date_str,
+                'strSearch': 'P',  # Period search
+                'strType': 'C',    # Corporate announcements
+                'pageno': '1',     # First page
+                'subcategory': '-1'  # All subcategories
+            }
             
             # Add required headers for API
             headers = {
@@ -234,11 +360,21 @@ class BSEMonitor:
                 'Connection': 'keep-alive',
             }
             
-            response = self.session.get(api_url, headers=headers, timeout=30)
+            response = self.session.get(api_url, params=params, headers=headers, timeout=30)
             response.raise_for_status()
             
             data = response.json()
             self.logger.info(f"BSE API response received, Table length: {len(data.get('Table', []))}")
+            
+            # If API returns empty, try the original endpoint as fallback
+            if not data.get('Table') or len(data.get('Table', [])) == 0:
+                self.logger.info("Primary API returned empty, trying fallback endpoint...")
+                fallback_url = "https://api.bseindia.com/BseIndiaAPI/api/AnnGetData/w"
+                response = self.session.get(fallback_url, headers=headers, timeout=30)
+                response.raise_for_status()
+                data = response.json()
+                self.logger.info(f"Fallback API response received, Table length: {len(data.get('Table', []))}")
+            
             return data
             
         except requests.RequestException as e:
@@ -255,44 +391,106 @@ class BSEMonitor:
         
         self.logger.info(f"Parsing HTML content, length: {len(html_content)}")
         
-        # Look for announcement tables/rows
-        # The actual structure may need adjustment based on BSE's HTML
-        announcement_rows = soup.find_all('tr', class_=re.compile(r'announcement|corporate'))
-        self.logger.info(f"Found {len(announcement_rows)} rows with announcement/corporate classes")
+        # Look for AngularJS data patterns in the HTML
+        # The announcements are rendered via AngularJS, so we need to look for patterns
+        self.logger.info("Looking for AngularJS announcement patterns...")
         
-        # If no rows found with those classes, try a broader search
-        if not announcement_rows:
-            self.logger.info("No rows found with announcement/corporate classes, trying broader search...")
-            # Try to find any table rows that might contain announcements
-            all_rows = soup.find_all('tr')
-            self.logger.info(f"Found {len(all_rows)} total table rows")
-            
-            # Look for rows with multiple cells (potential announcement rows)
-            announcement_rows = [row for row in all_rows if len(row.find_all('td')) >= 3]
-            self.logger.info(f"Found {len(announcement_rows)} rows with 3+ cells")
+        # Try to find any text that looks like announcement data
+        # Look for patterns like company names, dates, etc.
+        text_content = soup.get_text()
         
-        for i, row in enumerate(announcement_rows):
+        # Look for table structures that might contain announcements
+        tables = soup.find_all('table')
+        self.logger.info(f"Found {len(tables)} tables in HTML")
+        
+        # Look for specific patterns that indicate announcements
+        announcement_indicators = [
+            'NEWSSUB', 'SCRIP_CD', 'SLONGNAME', 'NEWS_DT', 'CATEGORYNAME',
+            'Corporate Announcement', 'Announcement', 'Company', 'Security Code'
+        ]
+        
+        found_indicators = []
+        for indicator in announcement_indicators:
+            if indicator in text_content:
+                found_indicators.append(indicator)
+        
+        self.logger.info(f"Found announcement indicators: {found_indicators}")
+        
+        # Since the content is dynamic, let's try to extract any structured data
+        # Look for table rows with multiple cells that might contain announcement data
+        all_rows = soup.find_all('tr')
+        self.logger.info(f"Found {len(all_rows)} total table rows")
+        
+        # Look for rows that might contain announcement-like data
+        potential_announcement_rows = []
+        for row in all_rows:
+            cells = row.find_all('td')
+            if len(cells) >= 2:
+                cell_text = ' '.join([cell.get_text(strip=True) for cell in cells])
+                # Look for patterns that suggest this is an announcement row
+                if any(keyword in cell_text.lower() for keyword in ['announcement', 'corporate', 'company', 'news', 'date']):
+                    potential_announcement_rows.append(row)
+        
+        self.logger.info(f"Found {len(potential_announcement_rows)} potential announcement rows")
+        
+        # Try to extract data from potential announcement rows
+        for i, row in enumerate(potential_announcement_rows):
             try:
-                # Extract announcement details
                 cells = row.find_all('td')
-                if len(cells) >= 3:
+                if len(cells) >= 2:
+                    # Extract basic information
+                    cell_texts = [cell.get_text(strip=True) for cell in cells]
+                    
+                    # Try to identify company name, date, title from cell contents
                     announcement = {
-                        'id': self.generate_announcement_id(row),
-                        'company': self.extract_company_name(cells),
-                        'timestamp': self.extract_timestamp(cells),
-                        'title': self.extract_title(cells),
-                        'category': self.extract_category(cells),
+                        'id': f"html_announcement_{i}_{hash(str(cell_texts))}",
+                        'company': self.extract_company_name_from_text(cell_texts),
+                        'timestamp': self.extract_timestamp_from_text(cell_texts),
+                        'title': self.extract_title_from_text(cell_texts),
+                        'category': 'General',
                         'xbrl_url': self.extract_xbrl_url(row),
                         'attachment_url': self.extract_attachment_url(row)
                     }
-                    announcements.append(announcement)
-                    self.logger.info(f"Extracted announcement {i+1}: {announcement['company']} - {announcement['title'][:50]}...")
+                    
+                    # Only add if we have meaningful data
+                    if announcement['title'] and announcement['title'] != 'No Title':
+                        announcements.append(announcement)
+                        self.logger.info(f"Extracted HTML announcement {i+1}: {announcement['company']} - {announcement['title'][:50]}...")
             except Exception as e:
-                self.logger.error(f"Error extracting announcement {i+1}: {e}")
+                self.logger.error(f"Error extracting HTML announcement {i+1}: {e}")
                 continue
         
-        self.logger.info(f"Total announcements extracted: {len(announcements)}")
+        self.logger.info(f"Total HTML announcements extracted: {len(announcements)}")
         return announcements
+    
+    def extract_company_name_from_text(self, cell_texts: List[str]) -> str:
+        """Extract company name from cell text content."""
+        for text in cell_texts:
+            # Look for patterns that suggest company names
+            if len(text) > 3 and any(char.isupper() for char in text) and not text.isdigit():
+                # Avoid common non-company text
+                if text.lower() not in ['announcement', 'corporate', 'news', 'date', 'time', 'category']:
+                    return text
+        return "Unknown Company"
+    
+    def extract_timestamp_from_text(self, cell_texts: List[str]) -> str:
+        """Extract timestamp from cell text content."""
+        for text in cell_texts:
+            # Look for date patterns
+            if re.search(r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}', text):
+                return text
+            elif re.search(r'\d{1,2}:\d{2}', text):
+                return text
+        return datetime.now().strftime("%Y-%m-%d %H:%M")
+    
+    def extract_title_from_text(self, cell_texts: List[str]) -> str:
+        """Extract announcement title from cell text content."""
+        for text in cell_texts:
+            if len(text) > 10 and not text.isdigit():
+                # Avoid common non-title text
+                if text.lower() not in ['announcement', 'corporate', 'news', 'date', 'time', 'category', 'company']:
+                    return text
+        return "No Title"
 
     def extract_announcements_api(self, api_data: dict) -> List[Dict]:
         """Extract announcement data from the API response."""
@@ -452,14 +650,37 @@ class BSEMonitor:
             current_time_ist = datetime.now(ist)
             monitor_status['last_check'] = current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST')
             
-            # Use API instead of HTML scraping
+            # Try API first
             api_data = self.fetch_announcements_api()
-            if not api_data:
-                self.logger.warning("Could not fetch announcements from API")
-                return
-
-            announcements = self.extract_announcements_api(api_data)
-            self.logger.info(f"Extracted {len(announcements)} total announcements from BSE API")
+            announcements = []
+            
+            if api_data and api_data.get('Table'):
+                announcements = self.extract_announcements_api(api_data)
+                self.logger.info(f"Extracted {len(announcements)} total announcements from BSE API")
+            else:
+                self.logger.warning("API returned no data, trying HTML scraping as fallback...")
+                # Try HTML scraping as fallback
+                html_content = self.fetch_announcements_page()
+                if html_content:
+                    announcements = self.extract_announcements(html_content)
+                    self.logger.info(f"Extracted {len(announcements)} total announcements from HTML scraping")
+                    
+                    # If HTML scraping also failed, try Selenium as final fallback
+                    if not announcements:
+                        self.logger.warning("HTML scraping returned no data, trying Selenium as final fallback...")
+                        selenium_announcements = self.fetch_announcements_selenium()
+                        if selenium_announcements:
+                            announcements = selenium_announcements
+                            self.logger.info(f"Extracted {len(announcements)} total announcements from Selenium scraping")
+                else:
+                    self.logger.error("HTML scraping failed, trying Selenium as final fallback...")
+                    selenium_announcements = self.fetch_announcements_selenium()
+                    if selenium_announcements:
+                        announcements = selenium_announcements
+                        self.logger.info(f"Extracted {len(announcements)} total announcements from Selenium scraping")
+                    else:
+                        self.logger.error("All scraping methods failed")
+                        return
             
             new_announcements = []
             processed_count = 0
