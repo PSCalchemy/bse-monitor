@@ -41,7 +41,9 @@ monitor_status = {
     'total_announcements': 0,
     'last_announcement': None,
     'service_started': datetime.now().isoformat(),
-    'status': 'running'
+    'status': 'running',
+    'last_heartbeat': datetime.now().isoformat(),
+    'monitoring_active': True
 }
 
 @app.route('/health')
@@ -73,6 +75,27 @@ def home():
 
 
 
+@app.route('/check-now')
+def check_now():
+    """Manually trigger an announcement check"""
+    print("🔍 Manual check triggered")
+    
+    try:
+        # Create monitor instance and run check
+        monitor = BSEMonitor()
+        monitor.check_for_new_announcements()
+        
+        return jsonify({
+            'message': 'Manual check completed',
+            'timestamp': datetime.now().isoformat(),
+            'last_check': monitor_status['last_check']
+        })
+    except Exception as e:
+        return jsonify({
+            'error': f'Manual check failed: {e}',
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
 @app.route('/status')
 def status():
     """Detailed status endpoint"""
@@ -98,6 +121,8 @@ def status():
         'status': monitor_status['status'],
         'started': monitor_status['service_started'],
         'last_check': monitor_status['last_check'],
+        'last_heartbeat': monitor_status['last_heartbeat'],
+        'monitoring_active': monitor_status['monitoring_active'],
         'total_announcements': monitor_status['total_announcements'],
         'last_announcement': monitor_status['last_announcement'],
         'email_recipient': '9ranjal@gmail.com',
@@ -335,19 +360,36 @@ class BSEMonitor:
         
         # Run immediately on startup
         try:
+            self.logger.info("Running initial announcement check...")
             self.check_for_new_announcements()
+            self.logger.info("Initial check completed successfully")
         except Exception as e:
             self.logger.error(f"Error in initial check: {e}")
+            import traceback
+            self.logger.error(f"Initial check traceback: {traceback.format_exc()}")
         
         # Schedule regular checks
+        self.logger.info(f"Scheduling checks every {CHECK_INTERVAL_MINUTES} minutes")
         schedule.every(CHECK_INTERVAL_MINUTES).minutes.do(self.check_for_new_announcements)
         
+        loop_count = 0
         while True:
             try:
+                loop_count += 1
+                
+                # Update heartbeat
+                monitor_status['last_heartbeat'] = datetime.now().isoformat()
+                
+                if loop_count % 10 == 0:  # Log every 10 minutes
+                    self.logger.info(f"Monitoring loop iteration {loop_count} - checking for scheduled tasks")
+                
                 schedule.run_pending()
                 time.sleep(60)  # Check every minute for scheduled tasks
             except Exception as e:
-                self.logger.error(f"Error in monitoring loop: {e}")
+                self.logger.error(f"Error in monitoring loop iteration {loop_count}: {e}")
+                import traceback
+                self.logger.error(f"Monitoring loop traceback: {traceback.format_exc()}")
+                monitor_status['monitoring_active'] = False
                 time.sleep(60)  # Continue after error
 
 def run_flask():
