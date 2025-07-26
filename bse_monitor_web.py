@@ -209,8 +209,10 @@ class BSEMonitor:
     def fetch_announcements_page(self) -> Optional[str]:
         """Fetch the BSE announcements page."""
         try:
+            self.logger.info(f"Fetching BSE announcements from: {BSE_ANNOUNCEMENTS_URL}")
             response = self.session.get(BSE_ANNOUNCEMENTS_URL, timeout=30)
             response.raise_for_status()
+            self.logger.info(f"BSE page fetched successfully, content length: {len(response.text)}")
             return response.text
         except requests.RequestException as e:
             self.logger.error(f"Error fetching BSE page: {e}")
@@ -221,11 +223,25 @@ class BSEMonitor:
         announcements = []
         soup = BeautifulSoup(html_content, 'html.parser')
         
+        self.logger.info(f"Parsing HTML content, length: {len(html_content)}")
+        
         # Look for announcement tables/rows
         # The actual structure may need adjustment based on BSE's HTML
         announcement_rows = soup.find_all('tr', class_=re.compile(r'announcement|corporate'))
+        self.logger.info(f"Found {len(announcement_rows)} rows with announcement/corporate classes")
         
-        for row in announcement_rows:
+        # If no rows found with those classes, try a broader search
+        if not announcement_rows:
+            self.logger.info("No rows found with announcement/corporate classes, trying broader search...")
+            # Try to find any table rows that might contain announcements
+            all_rows = soup.find_all('tr')
+            self.logger.info(f"Found {len(all_rows)} total table rows")
+            
+            # Look for rows with multiple cells (potential announcement rows)
+            announcement_rows = [row for row in all_rows if len(row.find_all('td')) >= 3]
+            self.logger.info(f"Found {len(announcement_rows)} rows with 3+ cells")
+        
+        for i, row in enumerate(announcement_rows):
             try:
                 # Extract announcement details
                 cells = row.find_all('td')
@@ -240,10 +256,12 @@ class BSEMonitor:
                         'attachment_url': self.extract_attachment_url(row)
                     }
                     announcements.append(announcement)
+                    self.logger.info(f"Extracted announcement {i+1}: {announcement['company']} - {announcement['title'][:50]}...")
             except Exception as e:
-                self.logger.error(f"Error extracting announcement: {e}")
+                self.logger.error(f"Error extracting announcement {i+1}: {e}")
                 continue
         
+        self.logger.info(f"Total announcements extracted: {len(announcements)}")
         return announcements
 
     def generate_announcement_id(self, row) -> str:
@@ -354,16 +372,26 @@ class BSEMonitor:
                 return
 
             announcements = self.extract_announcements(html_content)
+            self.logger.info(f"Extracted {len(announcements)} total announcements from BSE page")
+            
             new_announcements = []
+            processed_count = 0
 
-            for announcement in announcements:
+            for i, announcement in enumerate(announcements):
                 try:
+                    self.logger.info(f"Processing announcement {i+1}/{len(announcements)}: {announcement['company']} - {announcement['timestamp']}")
                     processed = self.process_announcement(announcement)
                     if processed:
                         new_announcements.append(processed)
+                        self.logger.info(f"NEW ANNOUNCEMENT FOUND: {processed['company']} - {processed['title'][:50]}...")
+                    else:
+                        self.logger.info(f"Announcement already processed: {announcement['company']}")
+                    processed_count += 1
                 except Exception as e:
-                    self.logger.error(f"Error processing announcement: {e}")
+                    self.logger.error(f"Error processing announcement {i+1}: {e}")
                     continue
+
+            self.logger.info(f"Processed {processed_count} announcements, found {len(new_announcements)} new ones")
 
             if new_announcements:
                 self.logger.info(f"Found {len(new_announcements)} new announcements")
@@ -375,7 +403,7 @@ class BSEMonitor:
                 monitor_status['last_announcement'] = new_announcements[0]['company']
             else:
                 self.logger.info("No new announcements found")
-                
+                    
         except Exception as e:
             self.logger.error(f"Error in check_for_new_announcements: {e}")
             import traceback
