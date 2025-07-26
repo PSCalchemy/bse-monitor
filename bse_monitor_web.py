@@ -206,6 +206,44 @@ def clear_database():
             'timestamp_utc': datetime.now().isoformat()
         }), 500
 
+@app.route('/test-email')
+def test_email():
+    """Test email configuration by sending a test email"""
+    print("📧 Test email endpoint called")
+    
+    # Convert to IST
+    from datetime import datetime
+    import pytz
+    ist = pytz.timezone('Asia/Kolkata')
+    current_time_ist = datetime.now(ist)
+    
+    try:
+        # Create monitor instance and test email
+        monitor = BSEMonitor()
+        success = monitor.email_sender.test_email_configuration()
+        
+        if success:
+            return jsonify({
+                'message': 'Test email sent successfully! Check your inbox.',
+                'timestamp_ist': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST'),
+                'timestamp_utc': datetime.now().isoformat(),
+                'status': 'success'
+            })
+        else:
+            return jsonify({
+                'error': 'Test email failed. Check logs for details.',
+                'timestamp_ist': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST'),
+                'timestamp_utc': datetime.now().isoformat(),
+                'status': 'failed'
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'error': f'Test email failed: {e}',
+            'timestamp_ist': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST'),
+            'timestamp_utc': datetime.now().isoformat(),
+            'status': 'error'
+        }), 500
+
 print("✅ Flask routes registered successfully")
 
 class BSEMonitor:
