@@ -172,6 +172,40 @@ def status():
         'system_info': memory_info
     })
 
+@app.route('/clear-db')
+def clear_database():
+    """Clear the processed announcements database and trigger fresh scan"""
+    print("🗑️ Clear database endpoint called")
+    
+    # Convert to IST
+    from datetime import datetime
+    import pytz
+    ist = pytz.timezone('Asia/Kolkata')
+    current_time_ist = datetime.now(ist)
+    
+    try:
+        # Create monitor instance and clear database
+        monitor = BSEMonitor()
+        monitor.clear_processed_announcements()
+        
+        # Reset global status
+        monitor_status['total_announcements'] = 0
+        monitor_status['last_announcement'] = None
+        
+        return jsonify({
+            'message': 'Database cleared successfully. Fresh scan will begin on next check.',
+            'timestamp_ist': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST'),
+            'timestamp_utc': datetime.now().isoformat(),
+            'total_announcements': 0,
+            'last_announcement': None
+        })
+    except Exception as e:
+        return jsonify({
+            'error': f'Failed to clear database: {e}',
+            'timestamp_ist': current_time_ist.strftime('%Y-%m-%d %H:%M:%S IST'),
+            'timestamp_utc': datetime.now().isoformat()
+        }), 500
+
 print("✅ Flask routes registered successfully")
 
 class BSEMonitor:
@@ -194,6 +228,9 @@ class BSEMonitor:
             ]
         )
         self.logger = logging.getLogger(__name__)
+        
+        # Clear processed announcements on startup to force fresh scan
+        self.clear_processed_announcements()
 
     def load_processed_announcements(self) -> set:
         """Load previously processed announcement IDs from file."""
@@ -205,6 +242,17 @@ class BSEMonitor:
         except Exception as e:
             self.logger.error(f"Error loading processed announcements: {e}")
         return set()
+    
+    def clear_processed_announcements(self):
+        """Clear the processed announcements database to force fresh scan."""
+        try:
+            if os.path.exists(DB_FILE):
+                os.remove(DB_FILE)
+                self.logger.info(f"Cleared processed announcements database: {DB_FILE}")
+            self.processed_announcements = set()
+            self.logger.info("Reset processed announcements set to empty")
+        except Exception as e:
+            self.logger.error(f"Error clearing processed announcements: {e}")
 
     def save_processed_announcements(self):
         """Save processed announcement IDs to file."""

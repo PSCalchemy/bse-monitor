@@ -1,0 +1,684 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="HandheldFriendly" content="true" />
+    <meta name="MobileOptimized" content="width" />
+    <meta http-equiv="X-UA-Compatible" content="IE=EmulateIE7, IE=EmulateIE8, IE=EmulateIE9, IE=EmulateIE10, IE=EmulateIE11 ">
+    <title>Latest Corporate Announcements</title>
+    <meta name="description" content="Get the latest stock/share market updates & corporate news/announcements and be updated on the live and latest happenings in the corporate world. BSE is the fastest & most reliable source to get accurate news about the companies in India." />
+    <meta name="keywords" content="stock market news, corporate news, corporate announcements, share market updates, bse, bse india, BSE Corporate Announcements, corporate Announcements BSE, BSE india Annoucements, BSE announcements" />
+
+    <meta http-equiv="Cache-control" content="private">
+    <meta http-equiv="Cache-Control" content="If-Modified-Since: Wed, 09 Jan 2019 13:07:00 GMT" />
+    <meta http-equiv="cache-control" content="must-revalidate" />
+
+    <script>
+        var a = new Date();
+        var mon = a.getMonth();
+        mon = mon + 1;
+        var time = a.getDate() + "" + mon + "" + a.getFullYear() + "" + a.getHours() + "" + a.getMinutes();
+        document.write("<script type='text/javascript' src='/version.js?v=" + time + "'><\/script>");
+    </script>
+
+    <script>
+        document.write('<link href="/include/css/bootstrap.css?v=' + version_js + '" rel="stylesheet" />');
+    </script>
+    <link href="/include/css/style.css" type="text/css" rel="stylesheet">
+    <link href="/include/css/font-awesome.css" type="text/css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/include/css/design.css">
+
+
+    <script src="/include/js/jquerylatest.js"></script>
+    <script src="/include/js/jqueryuilatest.js"></script>
+    <link href="/include/css/jquery-ui-Latest.min.css" rel="stylesheet" />
+    <script src="/D90/Angular/angular.latest.js"></script>
+
+
+
+    <style type="text/css">
+        .collapse-text-toggle {
+            font-weight: bold;
+            color: #0089d0;
+            cursor: pointer;
+        }
+    </style>
+
+    <script>
+        $(function () {
+            $("#txtFromDt").datepicker({
+                changeMonth: true,
+                changeYear: true,
+                dateFormat: "dd/mm/yy",
+                maxDate: Date.now.toString()
+            });
+        });
+        $(function () {
+            $("#txtToDt").datepicker({
+                changeMonth: true,
+                changeYear: true,
+                dateFormat: "dd/mm/yy",
+                maxDate: Date.now.toString()
+            });
+        });
+
+    </script>
+
+    <script>
+        function openID(id1, id2, flag) {
+            if (flag == 0) {
+                document.getElementById(id1).style.display = "none";
+                document.getElementById(id2).style.display = "block";
+
+            }
+            else if (flag == 1) {
+                document.getElementById(id1).style.display = "block";
+                document.getElementById(id2).style.display = "none";
+            }
+        }
+
+    </script>
+    <title></title>
+
+    <!--For Google AD-->
+
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script>
+        window.googletag = window.googletag || { cmd: [] };
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/35735749/Corp_Ann', [[300, 100], [728, 90], [234, 60], [970, 90]], 'div-gpt-ad-1566808019535-0').addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+
+    <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
+    <script>
+        window.googletag = window.googletag || { cmd: [] };
+        googletag.cmd.push(function () {
+            googletag.defineSlot('/35735749/Corp_Second', [[234, 60], [728, 90], [970, 90], [300, 100]], 'div-gpt-ad-1566808164151-0').addService(googletag.pubads());
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+        });
+    </script>
+
+
+
+
+</head>
+
+<body ng-app="corpann" ng-controller="corpannController" ng-cloak>
+
+
+
+
+    <div ng-init="fn_CorpAnn(currentPage,DefaultLang)">
+
+
+        <div id="topDiv" ng-include="'/D90/Header/top_new.html'"></div>
+
+        <div id="Divhomemenu" ng-include="'/D90/Header/corporates_menu.html'"></div>
+
+
+
+        <!--Google AD--><br>
+
+        <div align="center" class="largetable">
+
+            <!-- /35735749/Corp_Ann -->
+            <!--<div id='div-gpt-ad-1566808019535-0'>
+                <script>
+                    googletag.cmd.push(function () { googletag.display('div-gpt-ad-1566808019535-0'); });
+                </script>
+            </div>-->
+
+        </div>
+
+        <div class="whitebox">
+            <div class="container-fluid marketstartarea">
+
+
+
+
+
+                <div class="row">
+
+                </div>
+                <div class="row">
+                    <div class="col-lg-7">
+                        <div class=" blueheading" style="text-align: left">
+                            <div class="home_widget">
+                                <span class="page_info_title_s2">Latest Corporate Announcements</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-lg-5 text-right">
+                        <a data-bs-toggle="modal" data-bs-target="#myModal" href="#">Disclaimer</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+
+
+        <div id="fontSize">
+
+            <div class="container-fluid whitebox marketstartarea">
+                <div class="row">
+
+
+                    <div class="col-lg-2 text-left"><strong>Segment :</strong></div>
+                    <div class="col-lg-3 text-left">
+                        <select class="form-control" role="dropdownlist" name="anntype" ng-model="AnnType" id="ddlAnnType">
+                            <option value="C">Equity</option>
+                            <option value="D">Debt/Others</option>
+                            <option value="M">MF/ETFs</option>
+                            <option value="UNLMF">Unlisted MF</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 text-left">
+                        <strong>Announcement Submission Type :</strong>
+                    </div>
+                    <div class="col-lg-3 text-left" style="text-align: left">
+                        <select class="form-control" role="dropdownlist" name="anntype" ng-model="AnnsubmType" id="ddlAnnsubmType">
+                            <option value="0" selected="selected">Announcement</option>
+                            <option value="1">Announcement-xbrl</option>
+
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="row" style="padding-top: 10px">
+                    <div class="col-lg-2 text-left">
+                        <strong id="tdFrom">From Date</strong>
+                    </div>
+                    <div class="col-lg-3 text-left">
+                        <input id="txtFromDt" type="text" class="form-control" autocomplete="off" onkeypress="return false;" onpaste="return false;" ng-model="FromDate" ng-disabled="chkfrmDate" />
+                    </div>
+                    <div class="col-lg-2 text-left">
+                        <strong>To Date</strong>
+                    </div>
+                    <div class="col-lg-3 text-left">
+                        <input id="txtToDt" type="text" class="form-control" autocomplete="off" onkeypress="return false;" onpaste="return false;" ng-model="ToDate" ng-disabled="chktoDate" />
+                    </div>
+
+                </div>
+                <div class="row" style="padding-bottom: 10px; padding-top: 10px">
+
+                    <div class="col-lg-2 text-left">
+                        <strong>Category</strong>
+                    </div>
+                    <div class="col-lg-3 text-left" style="text-align: left">
+                        <select id="ddlPeriod" role="dropdownlist" name="period" class="form-control" ng-model="category" ng-change="fn_fillddl()">
+                            <option selected="selected" value="-1">--Select Category--</option>
+                            <option value="AGM/EGM">AGM/EGM</option>
+                            <option value="Board Meeting">Board Meeting</option>
+                            <option value="Company Update">Company Update</option>
+                            <option value="Corp. Action">Corp. Action</option>
+                            <option value="Insider Trading / SAST">Insider Trading / SAST</option>
+                            <option value="New Listing">New Listing</option>
+                            <option value="Result">Result</option>
+			                <option value="Integrated Filing">Integrated Filing</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 text-left">
+                        <strong>Sub Category </strong>
+                    </div>
+                    <div class="col-lg-3 text-left" style="text-align: left">
+                        <select id="ddlsubcat" role="DropDownList1" name="subcat" class="form-control" ng-model="scategory">
+                            <option selected="selected" value="-1">--Select SubCategory--</option>
+                            <option ng-repeat="ddl in ddldata.Table" value="{{ddl.subcategory}}">{{ddl.subcategory}}</option>
+                        </select>
+                    </div>
+
+
+
+
+                </div>
+
+
+                <div class="row">
+
+
+
+                    <div class="col-lg-2 text-left">
+                        <strong>Security Name </strong>
+                    </div>
+                    <div class="col-lg-3 text-left" style="text-align: left">
+                        <div ng-include="'/Comman/SmartSearch.html'"></div>
+                    </div>
+                    <div class="col-lg-2 text-left">
+
+                    </div>
+                    <div class="col-lg-2 text-left">
+                        <input type="submit" value="Submit" role="button" name="submit" ng-click="fn_submit()" id="btnSubmit" class="btn btn-default">
+                        <input type="submit" value="Reset" role="button" name="reset" ng-click="FnResetButton()" id="btnSubmit" class="btn btn-default">
+                    </div>
+                </div>
+                <!--<select name="users" ng-options="user.name for user in arrlist" ng-change="LangChange()" ng-model="userselected">
+                    <option value="">--Select Language--</option>
+                </select>-->
+
+            </div>
+
+
+
+
+
+            <div class="container-fluid whitebox marketstartarea" style="margin-top: 10px;">
+                <!--<div class="container-fluid">
+                    <div class="col-lg-6 text-left"><a data-toggle="modal" data-target="#myModal" href="#">Disclaimer</a></div>
+                </div>-->
+
+                <div ng-if="loader.CorpAnnState=='loading'" class="text-center"><img src="/include/images/loader.gif" /></div>
+
+                <div ng-if="loader.CorpAnnState=='loaded'">
+                    <div>
+                        <div class="col-lg-6 text-left">
+
+                            <b><a ng-click="fn_PrevPage()" style="cursor:pointer;margin-right:20px;" id="idprev" ng-if="currentPage != 1">Prev </a></b>
+                            <b><a ng-click="fn_NextPage()" style="cursor:pointer;" ng-if="loader.NextDisp == true" id="idnext">Next</a></b>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Current Page Number     {{currentPage}}  out of   {{pagenumber}} </b>
+                        </div>
+                        <div class="col-lg-6 text-right ">
+                            </b> Total  No of Announcements <b> {{CorpannData.Table1[0].ROWCNT }}</b> Till Date {{CorpannData.Table[0].NEWS_DT  | date:'dd MMM yyyy'}}
+                        </div>
+                    </div>
+
+                    <div ng-hide="CorpannData.Table.length > 0">No Records Found</div>
+                    <div ng-show="CorpannData.Table.length > 0">
+                        <div class="row">
+                            <div class="col-lg-12 largetable">
+                                <table width="100%" border="0" cellspacing="0" cellpadding="0">
+
+                                    <tr>
+                                        <td id="tdCat" class="td03" align="left">&nbsp;</td>
+                                        <td>
+                                            <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                <tr>
+                                                    <td id="tdCat" class="td03" align="left">&nbsp;</td>
+                                                </tr>
+                                                <tr>
+                                                    <td id="lblann" bgcolor="#aeaeae" class="td">
+
+
+
+
+                                                        <table cellpadding="0" cellspacing="0" width="100%">
+
+                                                            <tr><td class='tdcolumn' colspan='4' ng-if="trIsDisplay=='1'"><b>Security Code : </b>{{CorpannData.Table[0].SCRIP_CD}}&nbsp;&nbsp;&nbsp;&nbsp;<b>Company : </b><a href={{CorpannData.Table[0].NSURL}} target='_blank' class='tablebluelink'>{{CorpannData.Table[0].SLONGNAME }}</a></td></tr>
+                                                            <tr><td class='tdcolumn' colspan='4' ng-if="trIsDisplay!='1'" ng-show="scripcode != ''"><b>Security Code : </b>{{CorpannData.Table[0].SCRIP_CD}}&nbsp;&nbsp;&nbsp;&nbsp;<b>Company : </b><a href={{CorpannData.Table[0].NSURL}} target='_blank' class='tablebluelink'>{{CorpannData.Table[0].SLONGNAME }}</a></td></tr>
+                                                            <tr><td class='blueheadertd' style='font-weight:bold; color:#ffffff' align='left' colspan='4' ng-show="scripcode == ''"> {{CorpannData.Table[0].NEWS_DT  | date:'dd MMM yyyy'}} </td></tr>
+
+
+
+
+                                                            <tr>
+                                                                <td>
+                                                                    <!--<table cellpadding="4" cellspacing="1" width="100%"
+                                                                    ng-repeat="cann in CorpannData.Table.slice(((currentPage-1)*itemsPerPage), ((currentPage)*itemsPerPage))" ng-show="CorpannData.Table.length" >-->
+                                                                    <table cellpadding="4" cellspacing="1" width="100%"
+                                                                           ng-repeat="cann in CorpannData.Table" ng-show="CorpannData.Table.length">
+                                                                        <tr>
+
+                                                                            <td class="tdcolumngrey" width="70%" style="font-weight:bold;" valign="middle">
+                                                                                <span ng-bind-html="cann.NEWSSUB"></span>
+                                                                            </td>
+
+
+
+
+                                                                            <td class="tdcolumngrey" style="font-weight:bold;" valign="middle" width="20%" ng-if="cann.CATEGORYNAME != 'NULL' ">{{cann.CATEGORYNAME}}</td>
+                                                                            <td class="tdcolumngrey" style="font-weight:bold;" valign="middle" width="20%" ng-if="cann.CATEGORYNAME == 'NULL' "> </td>
+                                                                            <td class="tdcolumngrey" valign="middle" align="center" width="5%">
+                                                                                <a class="tablebluelink" ng-if="cann.AUDIO_VIDEO_FILE.length>0" href="{{cann.AUDIO_VIDEO_FILE}}" target="_blank">
+                                                                                    Audio/Video
+                                                                                </a>
+                                                                            </td>
+                                                                            <td class="tdcolumngrey" valign="middle" ng-if="cann.PDFFLAG==0 && cann.ATTACHMENTNAME" align="center" width="10%">
+                                                                                <a class="tablebluelink" href="/xml-data/corpfiling/AttachLive/{{cann.ATTACHMENTNAME}}" target="_blank">
+                                                                                    <i class="fa fa-file-pdf-o redpdficon" src="" alt="" border="0"></i>
+                                                                                </a><span ng-if="cann.Fld_Attachsize !=null &&  cann.Fld_Attachsize > 99999 ">{{cann.Fld_Attachsize/1048576 | number:2}} MB</span>
+                                                                                <span ng-if="cann.Fld_Attachsize !=null && cann.Fld_Attachsize <99999 ">{{cann.Fld_Attachsize/1024 | number:2}} KB</span>
+
+                                                                            </td>
+
+
+                                                                            <td class="tdcolumngrey" valign="middle" align="center" ng-if="cann.PDFFLAG==1 && cann.ATTACHMENTNAME" width="10%">
+                                                                                <a class="tablebluelink" href="/xml-data/corpfiling/AttachHis/{{cann.ATTACHMENTNAME}}" target="_blank">
+                                                                                    <i class="fa fa-file-pdf-o redpdficon" src="" alt="" border="0"></i>
+                                                                                </a>
+                                                                                <!--<a class="tablebluelink" href="/xml-data/corpfiling/AttachLive/{{cann.ATTACHMENTNAME}}" target="_blank"></a>-->
+                                                                                <span ng-if="cann.Fld_Attachsize !=null &&  cann.Fld_Attachsize >99999 ">{{cann.Fld_Attachsize/1048576 | number:2}} MB</span>
+                                                                                <span ng-if="cann.Fld_Attachsize !=null && cann.Fld_Attachsize <99999 ">{{cann.Fld_Attachsize/1024 | number:2}} KB</span>
+
+                                                                            </td>
+
+                                                                            <td class="tdcolumngrey" valign="middle" align="center" ng-if="cann.PDFFLAG==2 && cann.ATTACHMENTNAME" width="10%">
+                                                                                <a target="_blank" ng-click="fn_downloadPdf(cann.NEWSID)">
+                                                                                    <i class="fa fa-file-pdf-o redpdficon" src="" alt="" border="0"></i>
+
+                                                                                </a><span ng-if="cann.Fld_Attachsize !=null &&  cann.Fld_Attachsize >99999 ">{{cann.Fld_Attachsize/1048576 | number:2}} MB</span>
+                                                                                <span ng-if="cann.Fld_Attachsize !=null && cann.Fld_Attachsize <99999 ">{{cann.Fld_Attachsize/1024 | number:2}} KB</span>
+
+                                                                            </td>
+
+                                                                            <td class="tdcolumngrey" ng-if="!cann.ATTACHMENTNAME" valign="middle" align="center" width="5%"></td>
+
+                                                                            <td class="tdcolumngrey" valign="middle" ng-if="cann.News_submission_dt && cann.DissemDT  && cann.TimeDiff" width="5%" align="center">
+                                                                                <a target="_blank" ng-if="cann.FILESTATUS != 'X'" ng-click="fn_dwnldxbrl(cann.NEWSID,cann.SCRIP_CD)">
+                                                                                    XBRL
+                                                                                </a>
+                                                                                <a target="_blank" ng-if="cann.FILESTATUS == 'X'" href="{{cann.XML_NAME}}">
+                                                                                    XBRL
+                                                                                </a>
+                                                                            </td>
+
+                                                                            <td class="tdcolumngrey" valign="middle" ng-if="!cann.TimeDiff" width="5%" align="center"></td>
+
+
+                                                                        </tr>
+                                                                        <tr style="background-color: white; height: 32px;">
+
+                                                                            <td style="background-color:white;padding-left: 5px" colspan="5">
+
+                                                                                <div id="more{{cann.NEWSID}}" style="display:block">
+                                                                                    <span id="{{cann.NEWSID}}" ng-bind-html="cann.HEADLINE"></span>
+                                                                                    <a href="#" class="tablebluelink" ng-if="cann.MORE!=''" ng-click="moreclick(cann.NEWSID,'more','less',0)">Read More..</a>
+                                                                                </div>
+
+                                                                                <div id="less{{cann.NEWSID}}" style="display:none">
+                                                                                    <span ng-bind-html="cann.MORE"></span>
+
+                                                                                    <a href="#" class="tablebluelink" ng-click="moreclick(cann.NEWSID,'more','less',1)">Read less..</a>
+                                                                                </div>
+
+
+
+
+
+                                                                            </td>
+
+                                                                        </tr>
+
+                                                                        <tr style="background-color:white;height:32px;" ng-if="cann.TimeDiff">
+                                                                            <td style="background-color:white" colspan="5"> &nbsp;&nbsp;Exchange Received Time<b> {{cann.News_submission_dt | date:'dd-MM-yyyy HH:mm:ss' }}</b> Exchange Disseminated Time<b> {{cann.DissemDT | date:'dd-MM-yyyy HH:mm:ss' }}</b> Time Taken<b> {{cann.TimeDiff | date:'dd-MM-yyyy HH:mm:ss'}}</b></td>
+
+                                                                        </tr>
+                                                                        <tr style="background-color:white;height:32px;" ng-if="!cann.TimeDiff">
+                                                                            <td style="background-color:white" colspan="5" ng-if="cann.DissemDT"> &nbsp;&nbsp;Exchange Disseminated Time   <b> {{cann.DissemDT | date:'dd-MM-yyyy HH:mm:ss' }}</b></td>
+                                                                            <td style="background-color:white" colspan="5" ng-if="!cann.DissemDT"> &nbsp;&nbsp;Exchange Disseminated Time   <b> {{cann.NEWS_DT | date:'dd-MM-yyyy HH:mm:ss' }}</b></td>
+                                                                        </tr>
+                                                                        <tr class="__web-inspector-hide-shortcut__"><td class="tdcolumn" colspan="5">&nbsp; </td></tr>
+                                                                    </table>
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--<div class="col-lg-6 text-left">
+                        <ul uib-pagination total-items="totalItems" ng-model="currentPage" max-size="maxSize" class="pagination-sm" boundary-links="true"
+                            rotate="false" num-pages="numPages" items-per-page="itemsPerPage" ng-show="CorpannData.Table.length > 0"></ul>
+                    </div>-->
+                    <div>
+                        <div class="col-lg-6 text-left">
+
+                            <b><a ng-click="fn_PrevPage()" style="cursor:pointer;margin-right:20px;" id="idprev" ng-if="currentPage != 1">Prev </a></b>
+                            <b><a ng-click="fn_NextPage()" style="cursor:pointer;" ng-if="loader.NextDisp == true" id="idnext">Next</a></b>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>Current Page Number     {{currentPage}}  out of   {{pagenumber}} </b>
+                        </div>
+                        <div class="col-lg-6 text-right ">
+                            </b> Total  No of Announcements <b> {{CorpannData.Table1[0].ROWCNT }}</b> Till Date {{CorpannData.Table[0].NEWS_DT  | date:'dd MMM yyyy'}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <br /><br />
+
+    <div align="center" class="largetable">
+        <!-- /35735749/Corp_Second -->
+        <!--<div id='div-gpt-ad-1566808164151-0'>
+            <script>
+                googletag.cmd.push(function () { googletag.display('div-gpt-ad-1566808164151-0'); });
+            </script>
+        </div>-->
+    </div>
+
+
+    <br />
+
+    <!--MGID START-->
+    <div class="row">
+        <!-- Composite Start -->
+        <!--<div id="M659731ScriptRootC1140595"></div>
+        <script src="https://jsc.mgid.com/b/s/bseindia.com.1140595.js" async></script>-->
+        <!-- Composite End -->
+    </div>
+    <!--MGID END-->
+
+    <br />
+    <!-- Corp Dis modal-->
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+
+                    <h4 class="modal-title" id="myModalLabel">
+                        DISCLAIMER
+                    </h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <table width="540" border="0" align="center" cellpadding="0" cellspacing="0">
+
+                        <tr>
+                            <td align="center" class="body_text_table"><strong>DISCLAIMER</strong></td>
+                        </tr>
+                        <tr>
+
+                            <td class="body_text_table">
+                                1.	The information disseminated seamlessly on the website of BSE Ltd (“Exchange”) in form of Corporate Announcement or in any other form or otherwise is provided “AS IS” and “WITH ALL FAULTS” and without warranty of any kind or nature.
+                                <br />
+                                <br />
+                            </td>
+                        </tr>
+                        <tr>
+
+                            <td class="body_text_table">
+                                2.	The information uploaded on the Exchange’s website shall be a duty/responsibility/liability of the Company.
+                                <br />
+                                <br />
+                            </td>
+                        </tr>
+                        <tr>
+
+                            <td class="body_text_table">
+
+                                3.	The accuracy / adequacy / veracity of any information received from the companies by way of corporate Announcements is NOT pre-verified by the Exchange, before dissemination. The same may be verified by the Exchange only post dissemination on the Exchange website in accordance with the extant rules / guidelines provided by SEBI from time to time.
+                                <br />
+                                <br />
+                            </td>
+                        </tr>
+                        <tr>
+
+                            <td class="body_text_table">
+                                4.	Exchange shall not be, in any case whatsoever, held in question regarding the accuracy/reliability of the disclosures uploaded by the Company and disseminated on the Exchange website
+
+                                <br />
+                                <br />
+                            </td>
+                        </tr>
+                        <tr>
+
+                            <td class="body_text_table">
+
+                                5.	The Exchange does not warrant, guarantee or make any representations concerning the use, results of use or inability to use the information in terms of timeliness, truthfulness, sequence, completeness, accuracy, reliability, correctness, performance or otherwise regarding/pertaining to the information disseminated in form of Corporate Announcement or in any other form or otherwise on the Website of the Exchange (“Information”).
+                                <br />
+                                <br />
+                            </td>
+                        </tr>
+                        <tr>
+
+                            <td class="body_text_table">
+
+                                6.	Exchange does not warrant that the information will be uninterrupted or free of any error, omission, defect, shortcoming or limitation of any kind or nature.  The user of the information assumes the entire risk as to the suitability, use, results of use, accuracy, completeness, correctness of the information and shall waive any claim of detrimental reliance upon the information.
+                                <br />
+                                <br />
+                            </td>
+                        </tr>
+                        <tr>
+
+                            <td class="body_text_table">
+
+
+                                7.	Exchange does not warrant that it shall continue to disseminate, transfer or transmit information to the user using the existing facilities or technologies governing/concerning the dissemination of information. Exchange disclaims all responsibility and/or liability for any loss of information, transmission time, revenues, and/ or goodwill which may occur to the User/Company/any other person.
+
+                                <br />
+                                <br />
+                            </td>
+                        </tr>
+                        <tr>
+
+                            <td class="body_text_table">
+
+                                8.	The User/Company/any other person shall, at its own cost and expense, indemnify, defend or at its option settle, and hold BSE free and harmless from and against any and all losses, liabilities, claims, actions, costs and expenses, including reasonable attorneys’ fees and court costs, relating to, resulting from or in any way arising out of any or all information disseminated on the Website of the Exchange.
+                                <br />
+                                <br />
+                            </td>
+                        </tr>
+                        <tr>
+
+                            <td class="body_text_table">
+                                9.	Any dispute out of or in connection the information shall be subject to the exclusive jurisdiction of the courts of Mumbai, India and shall be governed by Indian law.
+                                <br />
+                                <br />
+                            </td>
+                        </tr>
+
+                    </table>
+
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Corp Dis modal-->
+    <!-- Corp Dis Complete Data by Newsid-->
+
+    <div class="modal fade" id="mySingleNewsModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-body">
+                    <div class="largetable">
+                        <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                            <tr>
+                                <td class="tdcolumn" colspan="7" style="font-weight:bold; background-color:#e2e2e2">{{CorpannDataByNewsId[0].NEWSSUB}}</td>
+
+                            </tr>
+                            <tr>
+                                <td class="tdcolumngrey" style="font-weight:normal;" valign="middle">Security Code</td>
+                                <td class="tdcolumngrey" style="font-weight:bold;" valign="middle"> {{CorpannDataByNewsId[0].SCRIP_CD}} </td>
+                                <td class="tdcolumngrey" style="font-weight: normal;" valign="middle">Company </td>
+                                <td class="tdcolumngrey" style="font-weight:bold;" valign="middle">{{CorpannDataByNewsId[0].SLONGNAME}} </td>
+                                <td ng-model="NewsSub" class="tdcolumngrey" valign="middle">
+                                    <a ng-if="CorpannDataByNewsId[0].AUDIO_VIDEO_FILE.length>0" class="tablebluelink" href="{{CorpannDataByNewsId[0].AUDIO_VIDEO_FILE}}" target="_blank">
+                                        Audio/Video
+                                    </a>
+                                </td>
+
+                                <td ng-model="NewsSub" class="tdcolumngrey" valign="middle" ng-if="CorpannDataByNewsId[0].PDFFLAG==0 && CorpannDataByNewsId[0].ATTACHMENTNAME">
+                                    <a class="tablebluelink" href="/xml-data/corpfiling/AttachLive/{{CorpannDataByNewsId[0].ATTACHMENTNAME}}" target="_blank">
+                                        <i class="fa fa-file-pdf-o redpdficon" src="" alt="" border="0"></i>
+                                    </a>
+                                </td>
+
+                                <td ng-model="NewsSub" class="tdcolumngrey" valign="middle" ng-if="CorpannDataByNewsId[0].PDFFLAG==1 && CorpannDataByNewsId[0].ATTACHMENTNAME">
+                                    <a class="tablebluelink" href="/xml-data/corpfiling/AttachHis/{{CorpannDataByNewsId[0].ATTACHMENTNAME}}" target="_blank">
+                                        <i class="fa fa-file-pdf-o redpdficon" src="" alt="" border="0"></i>
+                                    </a>
+                                </td>
+
+                                <td ng-model="NewsSub" class="tdcolumngrey" valign="middle" ng-if="CorpannDataByNewsId[0].PDFFLAG==2 && CorpannDataByNewsId[0].ATTACHMENTNAME">
+                                    <a target="_blank" ng-click="fn_downloadPdf(CorpannDataByNewsId[0].NEWSID)">
+                                        <i class="fa fa-file-pdf-o redpdficon" src="" alt="" border="0"></i>
+                                    </a>
+                                </td>
+                            </tr>
+
+                            <tr style="background-color: white; height: 30px; padding-left: 10px;" ng-if="CorpannDataByNewsId[0].TimeDiff">
+                                <!--<td style="background-color:white" colspan="6">Exchange Disseminated Time <b>{{CorpannDataByNewsId.Table[0].News_dt | date:'dd-MM-yyyy HH:mm:ss' }}</b></td>-->
+
+                                <td style="background-color:white" colspan="4"> &nbsp;&nbsp;Exchange Received Time<b> {{CorpannDataByNewsId[0].News_submission_dt | date:'dd-MM-yyyy HH:mm:ss' }}</b> Exchange Disseminated Time<b> {{CorpannDataByNewsId[0].DissemDT | date:'dd-MM-yyyy HH:mm:ss' }}</b> Time Taken<b> {{CorpannDataByNewsId[0].TimeDiff | date:'dd-MM-yyyy HH:mm:ss' }}</b></td>
+                            </tr>
+                            <tr style="background-color: white; height: 30px; padding-left: 10px;" ng-if="!CorpannDataByNewsId[0].TimeDiff">
+                                <td style="background-color:white" colspan="6" ng-if="CorpannDataByNewsId[0].DissemDT">Exchange Disseminated Time <b>{{CorpannDataByNewsId[0].DissemDT | date:'dd-MM-yyyy HH:mm:ss' }}</b></td>
+                                <td style="background-color:white" colspan="6" ng-if="!CorpannDataByNewsId[0].DissemDT">Exchange Disseminated Time <b>{{CorpannDataByNewsId[0].NEWS_DT | date:'dd-MM-yyyy HH:mm:ss' }}</b></td>
+                            </tr>
+                            <tr><td colspan="7" height="10px"></td></tr>
+
+                            <tr><td colspan="7" valign="middle" class="tdcolumn" ng-if="CorpannDataByNewsId[0].MORE" ng-bind-html="CorpannDataByNewsId[0].MORE"></td></tr>
+
+                            <tr><td colspan="7" valign="middle" class="tdcolumn" ng-if="!CorpannDataByNewsId[0].MORE" ng-bind-html="CorpannDataByNewsId[0].HEADLINE"></td></tr>
+
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Corp Dis Complete Data by Newsid-->
+    <footer class="footerarea" ng-include="'/footer.aspx'"></footer>
+    <script src="/D90/Angular/angular-sanitize.latest.js"></script>
+    <script src="/include/js/jquery.ui.touch-punch.min.js"></script>
+    <link href="https://bnotification.bseindia.com/" rel="preconnect">
+    <script src="https://bnotification.bseindia.com/socket.io/socket.io.js"></script>
+    <script>
+        document.write("<script type='text/javascript' src='/include/js/bootstrap.min.js?v=" + version_js + "'><\/script>");
+    </script>
+
+    <script src="/include/js/jquery.bootstrap-responsive-tabs.min.js"></script>
+    <script src="/D90/Angular/ui-bootstrap-tpls_min_v1.js"></script>
+    <script>
+        document.write("<script type='text/javascript' src='/D90/Controller/factoryother.js?v=" + version_cntroller + "'><\/script>");
+    </script>
+    <script>
+        document.write("<script type='text/javascript' src='/D90/Controller/AppnewController.js?v2=" + version_cntroller + "'><\/script>");
+        document.write("<script type='text/javascript' src='/D90/Controller/Headernew_streamController.js?v2=" + version_cntroller + "'><\/script>");
+        document.write("<script type='text/javascript' src='/D90/Controller/smartSearch182_parController.js?v3=" + version_cntroller + "'><\/script>");
+        document.write("<script type='text/javascript' src='/D90/Controller/Corporate/CorpAnn_ixbrlController.js?v2=" + version_cntroller + "'><\/script>");
+    </script>
+</body>
+</html>
